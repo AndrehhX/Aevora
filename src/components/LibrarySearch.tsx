@@ -22,6 +22,13 @@ export default function LibrarySearch({
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              onChange('');
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
+          aria-label="Search library"
           className="w-full bg-transparent text-[11px] text-[#F1EAF8] placeholder-[#BEA0D8]/30 outline-none"
           placeholder=""
         />

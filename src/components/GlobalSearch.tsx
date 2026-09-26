@@ -1,10 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, SlidersHorizontal } from 'lucide-react';
-import { searchIndex } from '../data/mock';
+import { Check, Search, SlidersHorizontal, X } from 'lucide-react';
+import { searchIndex, type SearchCategory } from '../data/mock';
 import { DURATION, EASE } from '../motion/presets';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { SmartImage } from './SmartImage';
+import Tooltip from './Tooltip';
+
+type Filter = 'all' | SearchCategory;
+const FILTERS: Array<{ id: Filter; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'installed', label: 'Installed' },
+  { id: 'popular', label: 'Popular' },
+  { id: 'indie', label: 'Indie' },
+];
 
 export default function GlobalSearch({
   value,
@@ -17,26 +26,37 @@ export default function GlobalSearch({
 }) {
   const [focused, setFocused] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [filter, setFilter] = useState<Filter>('all');
+  const [filterOpen, setFilterOpen] = useState(false);
   const open = focused && value.length > 0;
 
   const results = useMemo(() => {
     const q = value.trim().toLowerCase();
     if (!q) return [];
-    return searchIndex.filter((g) => g.title.toLowerCase().includes(q)).slice(0, 5);
-  }, [value]);
+    return searchIndex
+      .filter((g) => (filter === 'all' ? true : g.category === filter))
+      .filter((g) => g.title.toLowerCase().includes(q))
+      .slice(0, 5);
+  }, [value, filter]);
 
-  useEffect(() => setActiveIndex(0), [value]);
+  useEffect(() => setActiveIndex(0), [value, filter]);
 
-  const ref = useClickOutside<HTMLDivElement>(open, () => setFocused(false));
+  const ref = useClickOutside<HTMLDivElement>(open || filterOpen, () => {
+    setFocused(false);
+    setFilterOpen(false);
+  });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open && !filterOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setFocused(false);
+      if (e.key === 'Escape') {
+        setFocused(false);
+        setFilterOpen(false);
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open ]);
+  }, [open, filterOpen]);
 
   const choose = (id: string) => {
     onSelect(id);
@@ -56,6 +76,7 @@ export default function GlobalSearch({
       >
         <Search size={13} className="shrink-0 text-[#BEA0D8]/40" />
         <input
+          id="global-search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => setFocused(true)}
@@ -71,17 +92,72 @@ export default function GlobalSearch({
             }
           }}
           placeholder="Search"
+          aria-label="Global search"
           aria-expanded={open}
           aria-activedescendant={open && results[activeIndex] ? `gs-${results[activeIndex].id}` : undefined}
           className="w-full bg-transparent text-center text-[12px] text-[#F1EAF8] outline-none placeholder:text-[#BEA0D8]/50"
         />
-        <span className="flex h-[22px] w-[28px] shrink-0 items-center justify-center rounded-full bg-[rgba(74,53,96,0.30)] text-[#D9C6EA]/60">
-          <SlidersHorizontal size={12} />
-        </span>
+        {value.length > 0 && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => onChange('')}
+            aria-label="Clear search"
+            className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-[rgba(74,53,96,0.30)] text-[#D9C6EA]/70 transition-colors hover:text-[#F1EAF8]"
+          >
+            <X size={12} />
+          </motion.button>
+        )}
+        <Tooltip label="Search filters">
+          <motion.button
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={() => setFilterOpen((o) => !o)}
+            aria-label="Search filters"
+            aria-expanded={filterOpen}
+            className={`flex h-[22px] w-[28px] shrink-0 items-center justify-center rounded-full transition-colors ${
+              filter === 'all' ? 'bg-[rgba(74,53,96,0.30)] text-[#D9C6EA]/60' : 'bg-[rgba(130,99,161,0.45)] text-[#F1EAF8]'
+            }`}
+          >
+            <SlidersHorizontal size={12} />
+          </motion.button>
+        </Tooltip>
       </motion.div>
 
+      {/* filter menu */}
       <AnimatePresence>
-        {open && (
+        {filterOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.97 }}
+            transition={{ duration: DURATION.micro, ease: EASE.out }}
+            className="absolute right-0 top-[38px] z-[60] w-[150px] overflow-hidden rounded-[12px] border border-[rgba(217,198,234,0.12)] bg-[rgba(23,16,31,0.97)] p-1 shadow-2xl backdrop-blur-2xl"
+          >
+            {FILTERS.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => {
+                  setFilter(f.id);
+                  setFilterOpen(false);
+                }}
+                aria-pressed={filter === f.id}
+                className={`flex w-full items-center justify-between rounded-[8px] px-2.5 py-1.5 text-left text-[12px] font-medium transition-colors ${
+                  filter === f.id ? 'bg-[rgba(130,99,161,0.28)] text-[#F1EAF8]' : 'text-[#D9C6EA]/75 hover:bg-[rgba(74,53,96,0.32)] hover:text-[#F1EAF8]'
+                }`}
+              >
+                {f.label}
+                {filter === f.id && <Check size={13} className="text-[#BEA0D8]" />}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {open && !filterOpen && (
           <motion.div
             initial={{ opacity: 0, y: -4, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -89,6 +165,11 @@ export default function GlobalSearch({
             transition={{ duration: DURATION.fast, ease: EASE.out }}
             className="absolute left-0 right-0 top-[38px] z-50 overflow-hidden rounded-[14px] border border-[rgba(217,198,234,0.10)] bg-[#17101F]/95 p-1.5 shadow-2xl backdrop-blur-2xl"
           >
+            {filter !== 'all' && (
+              <div className="px-2.5 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-[#BEA0D8]/50">
+                {FILTERS.find((f) => f.id === filter)?.label}
+              </div>
+            )}
             {results.length === 0 && <div className="px-3 py-2 text-[12px] text-[#BEA0D8]/50">No results</div>}
             {results.map((r, i) => (
               <div
@@ -105,7 +186,9 @@ export default function GlobalSearch({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[12px] font-medium text-[#D9C6EA]/85">{r.title}</span>
-                  {r.status && <span className="block text-[10px] text-[#BEA0D8]/50">{r.status}</span>}
+                  <span className="block text-[10px] text-[#BEA0D8]/50">
+                    {r.categoryLabel}{r.status ? ` · ${r.status}` : ''}
+                  </span>
                 </span>
               </div>
             ))}

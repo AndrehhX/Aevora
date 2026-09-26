@@ -10,18 +10,24 @@ export default function GameCarousel({
   games,
   selectedId,
   onSelect,
+  inertia = true,
 }: {
   games: PopularGame[];
   selectedId: string;
   onSelect: (id: string) => void;
+  inertia?: boolean;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(() => Math.max(0, games.findIndex((g) => g.id === selectedId)));
+  const [kbActive, setKbActive] = useState(false);
 
   // drag-with-momentum refs (no rerenders while dragging)
   const drag = useRef({ down: false, startX: 0, startScroll: 0, lastX: 0, lastT: 0, vel: 0, moved: 0, raf: 0 });
   const suppressClick = useRef(false);
+  const inertiaPref = useRef(inertia);
+  inertiaPref.current = inertia;
 
   const updateArrows = useCallback(() => {
     const el = trackRef.current;
@@ -77,6 +83,7 @@ export default function GameCarousel({
       suppressClick.current = true;
       setTimeout(() => (suppressClick.current = false), 0);
     }
+    if (!inertiaPref.current) return;
     // momentum glide
     let v = -d.vel * 16; // px per frame
     if (Math.abs(v) < 2) return;
@@ -129,6 +136,24 @@ export default function GameCarousel({
           ref={trackRef}
           onScroll={updateArrows}
           onPointerDown={onPointerDown}
+          tabIndex={0}
+          role="listbox"
+          aria-label="Most Popular games. Arrow keys move focus, Enter selects."
+          onFocus={() => setKbActive(true)}
+          onBlur={() => setKbActive(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+              e.preventDefault();
+              const dir = e.key === 'ArrowRight' ? 1 : -1;
+              const next = Math.min(games.length - 1, Math.max(0, focusIdx + dir));
+              setFocusIdx(next);
+              setKbActive(true);
+              trackRef.current?.children[next]?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+            } else if ((e.key === 'Enter' || e.key === ' ') && games[focusIdx]) {
+              e.preventDefault();
+              onSelect(games[focusIdx].id);
+            }
+          }}
           onClickCapture={(e) => {
             if (suppressClick.current) {
               e.stopPropagation();
@@ -149,7 +174,18 @@ export default function GameCarousel({
           style={{ scrollbarWidth: 'none', cursor: 'grab', touchAction: 'pan-y' }}
         >
           {games.map((g, i) => (
-            <GameCard key={g.id} game={g} index={i} selected={g.id === selectedId} onSelect={onSelect} />
+            <GameCard
+              key={g.id}
+              game={g}
+              index={i}
+              selected={g.id === selectedId}
+              focused={kbActive && i === focusIdx}
+              onFocus={setFocusIdx}
+              onSelect={(id) => {
+                setFocusIdx(i);
+                onSelect(id);
+              }}
+            />
           ))}
         </div>
 

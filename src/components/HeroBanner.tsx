@@ -39,9 +39,20 @@ function GenericLogo({ game }: { game: ResolvedGame }) {
   );
 }
 
-export default function HeroBanner({ game, onCta }: { game: ResolvedGame; onCta: (game: ResolvedGame) => void }) {
+export default function HeroBanner({
+  game,
+  onCta,
+  parallax = true,
+  forceReduced = false,
+}: {
+  game: ResolvedGame;
+  onCta: (game: ResolvedGame) => void;
+  parallax?: boolean;
+  forceReduced?: boolean;
+}) {
   const ref = useRef<HTMLDivElement>(null);
-  const reduced = usePrefersReducedMotion();
+  const systemReduced = usePrefersReducedMotion();
+  const reduced = forceReduced || systemReduced;
   // Displayed game lags selection until next artwork is preloaded — never blank.
   const [display, setDisplay] = useState(game);
   const [heroSrc, setHeroSrc] = useState(game.hero);
@@ -77,7 +88,7 @@ export default function HeroBanner({ game, onCta }: { game: ResolvedGame; onCta:
   const imgY = useTransform(sy, [0, 1], [4, -4]);
 
   const onMove = (e: React.MouseEvent) => {
-    if (reduced) return;
+    if (reduced || !parallax) return;
     const r = ref.current?.getBoundingClientRect();
     if (!r) return;
     mx.set((e.clientX - r.left) / r.width);
@@ -101,7 +112,7 @@ export default function HeroBanner({ game, onCta }: { game: ResolvedGame; onCta:
         className="group relative h-[clamp(300px,52vh,560px)] w-full overflow-hidden rounded-[18px] border border-[rgba(217,198,234,0.10)] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]"
       >
         {/* parallax wrapper holds the crossfade stack so transforms never fight */}
-        <motion.div className="absolute inset-0" style={reduced ? undefined : { x: imgX, y: imgY }}>
+        <motion.div className="absolute inset-0" style={reduced || !parallax ? undefined : { x: imgX, y: imgY }}>
           <AnimatePresence initial={false}>
             <motion.img
               key={display.id}

@@ -5,7 +5,7 @@ type CursorState = 'default' | 'interactive' | 'pressed' | 'dragging' | 'text';
 
 // Subtle Aevora pointer: precise dot + softly lagging lavender ring.
 // MotionValues only — no React state per mousemove. Fine-pointer devices only.
-export default function CustomCursor() {
+export default function CustomCursor({ enabled: enabledProp = true }: { enabled?: boolean }) {
   const [enabled, setEnabled] = useState(false);
   const [state, setState] = useState<CursorState>('default');
   const x = useMotionValue(-100);
@@ -14,6 +14,10 @@ export default function CustomCursor() {
   const ringY = useSpring(y, { stiffness: 260, damping: 28, mass: 0.6 });
 
   useEffect(() => {
+    if (!enabledProp) {
+      setEnabled(false);
+      return;
+    }
     if (!window.matchMedia('(pointer: fine)').matches) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     setEnabled(true);
@@ -50,7 +54,7 @@ export default function CustomCursor() {
       window.removeEventListener('mousedown', onDown);
       window.removeEventListener('mouseup', onUp);
     };
-  }, [x, y]);
+  }, [x, y, enabledProp]);
 
   if (!enabled) return null;
 

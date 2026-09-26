@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
+import type { CommunityItem } from '../data/mock';
 import { communityItems } from '../data/mock';
 import { SmartImage } from './SmartImage';
 
-export default function CommunityPanel({ onItemClick }: { onItemClick: () => void }) {
+export default function CommunityPanel({ onItemClick }: { onItemClick: (item: CommunityItem) => void }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -23,7 +24,7 @@ export default function CommunityPanel({ onItemClick }: { onItemClick: () => voi
             transition={{ delay: 0.55 + i * 0.07, duration: 0.35 }}
             whileHover={{ x: 2 }}
             whileTap={{ scale: 0.97 }}
-            onClick={onItemClick}
+            onClick={() => onItemClick(c)}
             className="group flex w-full cursor-pointer items-start gap-2 text-left"
           >
             <span className="h-[26px] w-[26px] shrink-0 overflow-hidden rounded-[6px] border border-[rgba(217,198,234,0.12)] bg-[rgba(74,53,96,0.25)]">

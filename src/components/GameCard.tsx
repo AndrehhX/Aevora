@@ -7,12 +7,16 @@ export default function GameCard({
   game,
   index,
   selected,
+  focused = false,
   onSelect,
+  onFocus,
 }: {
   game: PopularGame;
   index: number;
   selected: boolean;
+  focused?: boolean;
   onSelect: (id: string) => void;
+  onFocus?: (index: number) => void;
 }) {
   return (
     <motion.div
@@ -20,6 +24,7 @@ export default function GameCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 + index * CARD_STAGGER, duration: 0.45, ease: EASE.out }}
       onClick={() => onSelect(game.id)}
+      onMouseEnter={() => onFocus?.(index)}
       className="group w-[clamp(110px,10.2vw,158px)] shrink-0 cursor-pointer snap-start"
       data-cursor="interactive"
     >
@@ -31,7 +36,7 @@ export default function GameCard({
           selected
             ? 'border-[#A07CC1]/60 shadow-[0_18px_44px_-12px_rgba(190,160,216,0.30)]'
             : 'border-[rgba(217,198,234,0.10)] group-hover:border-[rgba(190,160,216,0.35)] group-hover:shadow-[0_18px_44px_-12px_rgba(190,160,216,0.28)]'
-        }`}
+        } ${focused ? 'ring-1 ring-[rgba(190,160,216,0.8)] ring-offset-2 ring-offset-[#0D0912]' : ''}`}
       >
         <SmartImage
           src={game.cover}

@@ -5,10 +5,12 @@ import { DURATION, EASE } from '../motion/presets';
 import { useClickOutside } from '../hooks/useClickOutside';
 
 const ITEMS = [
-  { id: 'profile', label: 'Profile', icon: User, msg: 'Profile coming soon' },
-  { id: 'settings', label: 'Settings', icon: Settings, msg: 'Settings coming soon' },
-  { id: 'signout', label: 'Sign out', icon: LogOut, msg: 'Sign out is disabled in this prototype' },
+  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'signout', label: 'Sign out', icon: LogOut },
 ];
+
+export type ProfileAction = 'profile' | 'settings' | 'signout';
 
 export default function ProfileDropdown({
   open,
@@ -17,7 +19,7 @@ export default function ProfileDropdown({
 }: {
   open: boolean;
   onClose: () => void;
-  onAction: (msg: string) => void;
+  onAction: (id: ProfileAction) => void;
 }) {
   const ref = useClickOutside<HTMLDivElement>(open, onClose);
 
@@ -46,7 +48,7 @@ export default function ProfileDropdown({
               key={item.id}
               whileTap={{ scale: 0.97 }}
               onClick={() => {
-                onAction(item.msg);
+                onAction(item.id as ProfileAction);
                 onClose();
               }}
               className="flex w-full items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-left text-[12px] font-medium text-[#D9C6EA]/85 transition-colors hover:bg-[rgba(74,53,96,0.32)] hover:text-[#F1EAF8]"

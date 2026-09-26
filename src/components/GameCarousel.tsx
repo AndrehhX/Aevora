@@ -21,7 +21,7 @@ export default function GameCarousel({ games }: { games: PopularGame[] }) {
       className="relative w-full"
     >
       <div className="mb-2 flex items-center justify-between px-0.5">
-        <h2 className="text-[12.5px] font-semibold text-white/90">Most Popular</h2>
+        <h2 className="text-[12.5px] font-semibold text-[#F1EAF8]/90">Most Popular</h2>
       </div>
       <div className="relative">
         <div
@@ -45,13 +45,13 @@ export default function GameCarousel({ games }: { games: PopularGame[] }) {
         </div>
 
         {/* fade edge */}
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-[72px] bg-gradient-to-l from-[#0f0819] to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-[72px] bg-gradient-to-l from-[#0D0912] to-transparent" />
 
         <motion.button
-          whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.12)' }}
+          whileHover={{ scale: 1.1, backgroundColor: 'rgba(74,53,96,0.45)' }}
           whileTap={{ scale: 0.9 }}
           onClick={() => scrollBy(1)}
-          className="absolute right-[2px] top-[42%] flex h-[30px] w-[30px] -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.12] bg-black/50 text-white/85 shadow-[0_10px_28px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+          className="absolute right-[2px] top-[42%] flex h-[30px] w-[30px] -translate-y-1/2 items-center justify-center rounded-full border border-[rgba(217,198,234,0.12)] bg-black/50 text-[#D9C6EA]/85 shadow-[0_10px_28px_rgba(0,0,0,0.6)] backdrop-blur-xl"
           aria-label="next"
         >
           <ChevronRight size={16} />

@@ -33,7 +33,7 @@ export default function HeroBanner() {
           mx.set(0.5);
           my.set(0.5);
         }}
-        className="group relative h-[clamp(300px,52vh,560px)] w-full overflow-hidden rounded-[18px] border border-white/[0.09] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]"
+        className="group relative h-[clamp(300px,52vh,560px)] w-full overflow-hidden rounded-[18px] border border-[rgba(217,198,234,0.10)] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]"
       >
         {/* bg image with slow cinematic scale */}
         <AnimatePresence mode="popLayout">
@@ -63,7 +63,7 @@ export default function HeroBanner() {
         {/* gradients for readability */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/35 via-transparent to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-[#0e0716]/60 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-[#0D0912]/60 to-transparent" />
 
         {/* logo */}
         <motion.div
@@ -95,16 +95,16 @@ export default function HeroBanner() {
           className="absolute bottom-[18px] right-[18px]"
         >
           <motion.button
-            whileHover={{ scale: 1.04, borderColor: 'rgba(255,255,255,0.25)' }}
+            whileHover={{ scale: 1.04, borderColor: 'rgba(217,198,234,0.25)' }}
             whileTap={{ scale: 0.96 }}
-            className="rounded-full border border-white/[0.14] bg-black/45 px-4 py-[7px] text-[12px] font-medium text-white/90 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+            className="rounded-full border border-[rgba(217,198,234,0.14)] bg-black/45 px-4 py-[7px] text-[12px] font-medium text-[#F1EAF8]/90 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl"
           >
             {featured.cta}
           </motion.button>
         </motion.div>
 
         {/* subtle top highlight */}
-        <div className="pointer-events-none absolute inset-0 rounded-[18px] ring-1 ring-inset ring-white/[0.06]" />
+        <div className="pointer-events-none absolute inset-0 rounded-[18px] ring-1 ring-inset ring-[rgba(217,198,234,0.06)]" />
       </div>
     </motion.section>
   );

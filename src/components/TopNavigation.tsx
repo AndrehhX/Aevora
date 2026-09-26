@@ -33,10 +33,10 @@ export default function TopNavigation({
             const active = item === activeNav;
             return (
               <button key={item} onClick={() => setActiveNav(item)} className="group relative pb-1 text-[12.5px] font-medium">
-                <span className={`transition-colors ${active ? 'text-[#d8b4fe]' : 'text-white/60 group-hover:text-white'}`}>
+                <span className={`transition-colors ${active ? 'text-[#BEA0D8]' : 'text-[#D9C6EA]/60 group-hover:text-[#F1EAF8]'}`}>
                   {item === 'Early2025' ? (
                     <span>
-                      <span className="text-[#7ee787]">E</span>arly2025
+                      <span className="text-[#BEA0D8]">E</span>arly2025
                     </span>
                   ) : (
                     item
@@ -45,12 +45,12 @@ export default function TopNavigation({
                 {active && (
                   <motion.span
                     layoutId="nav-glow"
-                    className="absolute -bottom-[1px] left-1/2 h-[2px] w-[70%] -translate-x-1/2 rounded-full bg-gradient-to-r from-[#b565ff] to-[#e5489b] shadow-[0_0_14px_rgba(181,101,255,0.9)]"
+                    className="absolute -bottom-[1px] left-1/2 h-[2px] w-[70%] -translate-x-1/2 rounded-full bg-gradient-to-r from-[#8263A1] to-[#A07CC1] shadow-[0_0_14px_rgba(190,160,216,0.55)]"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                   />
                 )}
-                {active && <span className="absolute inset-0 -z-10 blur-[14px] bg-[#b565ff]/25 rounded-full" />}
-                {!active && <span className="absolute -bottom-[1px] left-1/2 h-[2px] w-0 -translate-x-1/2 rounded-full bg-white/30 transition-all duration-200 group-hover:w-[50%]" />}
+                {active && <span className="absolute inset-0 -z-10 blur-[14px] bg-[#8263A1]/25 rounded-full" />}
+                {!active && <span className="absolute -bottom-[1px] left-1/2 h-[2px] w-0 -translate-x-1/2 rounded-full bg-[#BEA0D8]/30 transition-all duration-200 group-hover:w-[50%]" />}
               </button>
             );
           })}
@@ -61,19 +61,19 @@ export default function TopNavigation({
           <motion.button
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.94 }}
-            className="flex h-[28px] w-[28px] items-center justify-center rounded-[8px] border border-white/10 bg-gradient-to-br from-[#5865F2] to-[#7b8cff] text-[14px] font-bold text-white shadow-[0_6px_18px_-6px_rgba(88,101,242,0.7)]"
+            className="flex h-[28px] w-[28px] items-center justify-center rounded-[8px] border border-[rgba(217,198,234,0.12)] bg-gradient-to-br from-[#4A3560] to-[#654A7F] text-[14px] font-bold text-[#F1EAF8] shadow-[0_6px_18px_-6px_rgba(74,53,96,0.7)]"
           >
             <span className="text-[13px]">◈</span>
           </motion.button>
 
           {/* theme + profile chip */}
-          <div className="flex items-center gap-1.5 rounded-full border border-white/[0.09] bg-white/[0.05] py-[3px] pl-[6px] pr-[4px] backdrop-blur-xl">
-            <button onClick={toggleTheme} className="text-[13px] leading-none text-yellow-200/90 transition-transform hover:scale-110" aria-label="toggle">
+          <div className="flex items-center gap-1.5 rounded-full border border-[rgba(217,198,234,0.10)] bg-[rgba(23,16,31,0.66)] py-[3px] pl-[6px] pr-[4px] backdrop-blur-xl">
+            <button onClick={toggleTheme} className="text-[13px] leading-none text-[#D9C6EA]/90 transition-transform hover:scale-110" aria-label="toggle">
               {dark ? '🌙' : '☀️'}
             </button>
-            <span className="h-3 w-px bg-white/10" />
-            <span className="text-[11px] font-medium text-white/80">Neo Aura</span>
-            <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }} className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-white/[0.08] text-white/70">
+            <span className="h-3 w-px bg-[#BEA0D8]/10" />
+            <span className="text-[11px] font-medium text-[#D9C6EA]/80">Neo Aura</span>
+            <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }} className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[rgba(74,53,96,0.32)] text-[#D9C6EA]/70">
               <span className="text-[12px]">⚙</span>
             </motion.button>
           </div>

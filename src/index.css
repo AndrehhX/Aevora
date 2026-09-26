@@ -3,19 +3,31 @@
 @tailwind utilities;
 
 :root{
-  --bg: #0f0819;
-  --bg-2: #190d29;
-  --surface: rgba(32,19,52,0.58);
-  --surface-hover: rgba(48,28,74,0.72);
-  --surface-solid: #1e1232;
-  --border: rgba(255,255,255,0.08);
-  --border-soft: rgba(255,255,255,0.06);
-  --text-primary: #f3eefb;
-  --text-secondary: rgba(235,220,255,0.62);
-  --text-muted: rgba(235,220,255,0.42);
-  --accent: #b565ff;
-  --accent-2: #e5489b;
-  --accent-glow: rgba(181,101,255,0.45);
+  /* Aevora color identity */
+  --aevora-bg: #0D0912;
+  --aevora-surface: #17101F;
+  --aevora-deep: #4A3560;
+  --aevora-purple-dark: #654A7F;
+  --aevora-purple: #8263A1;
+  --aevora-lavender: #A07CC1;
+  --aevora-lavender-soft: #BEA0D8;
+  --aevora-lavender-pale: #D9C6EA;
+  --aevora-text: #F1EAF8;
+
+  /* derived surface / border / text tokens (dark-first) */
+  --bg: var(--aevora-bg);
+  --bg-2: var(--aevora-surface);
+  --surface: rgba(23, 16, 31, 0.66);
+  --surface-hover: rgba(74, 53, 96, 0.32);
+  --surface-solid: var(--aevora-surface);
+  --border: rgba(217, 198, 234, 0.10);
+  --border-soft: rgba(190, 160, 216, 0.08);
+  --text-primary: var(--aevora-text);
+  --text-secondary: var(--aevora-lavender-pale);
+  --text-muted: rgba(190, 160, 216, 0.62);
+  --accent: var(--aevora-purple);
+  --accent-2: var(--aevora-lavender);
+  --accent-glow: rgba(190, 160, 216, 0.28);
   --radius-s: 8px;
   --radius-m: 14px;
   --radius-l: 20px;
@@ -25,8 +37,8 @@
 html,body,#root{ height:100%; }
 body{
   margin:0;
-  background: var(--bg);
-  color: var(--text-primary);
+  background: var(--aevora-bg);
+  color: var(--aevora-text);
   font-family: Inter, Geist, system-ui, -apple-system, sans-serif;
   overflow:hidden;
   -webkit-font-smoothing: antialiased;

@@ -11,7 +11,7 @@ export default function InstalledGameList({
   onSelect: (id: string) => void;
 }) {
   if (games.length === 0) {
-    return <div className="px-2 py-4 text-[11px] text-white/40">No games found</div>;
+    return <div className="px-2 py-4 text-[11px] text-[#BEA0D8]/40">No games found</div>;
   }
   return (
     <div className="flex flex-col gap-[2px]">

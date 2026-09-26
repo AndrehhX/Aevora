@@ -23,8 +23,8 @@ export default function AppShell() {
       className="relative h-screen w-screen overflow-hidden"
       style={{
         background: dark
-          ? 'radial-gradient(1200px 700px at 70% -10%, rgba(139,46,199,0.22), transparent 60%), radial-gradient(900px 600px at 8% 108%, rgba(229,72,155,0.14), transparent 60%), radial-gradient(700px 500px at 50% 50%, rgba(88,28,135,0.18), transparent 70%), linear-gradient(180deg,#150b24 0%,#0f0819 55%,#0c0614 100%)'
-          : 'radial-gradient(1200px 700px at 70% -10%, rgba(88,28,135,0.35), transparent 60%), linear-gradient(180deg,#241239 0%,#180e28 100%)',
+          ? 'radial-gradient(1200px 700px at 70% -10%, rgba(101,74,127,0.20), transparent 60%), radial-gradient(900px 600px at 8% 108%, rgba(74,53,96,0.22), transparent 60%), radial-gradient(700px 500px at 50% 50%, rgba(74,53,96,0.12), transparent 70%), linear-gradient(180deg,#17101F 0%,#0D0912 55%,#0D0912 100%)'
+          : 'radial-gradient(1200px 700px at 70% -10%, rgba(101,74,127,0.28), transparent 60%), linear-gradient(180deg,#1d1429 0%,#17101F 100%)',
       }}
     >
       {/* film grain / vignette */}

@@ -21,7 +21,7 @@ export function SmartImage({
         className={className}
         style={{
           ...style,
-          background: 'linear-gradient(135deg,#b565ff 0%,#e5489b 50%,#5b21b6 100%)',
+          background: 'linear-gradient(135deg,#4A3560 0%,#8263A1 50%,#17101F 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

@@ -14,7 +14,7 @@ export default function GameCard({ game, index }: { game: PopularGame; index: nu
         whileHover={{ scale: 1.045, y: -4 }}
         whileTap={{ scale: 0.97 }}
         transition={{ type: 'spring', stiffness: 380, damping: 26 }}
-        className="relative aspect-[3/4] w-full overflow-hidden rounded-[14px] border border-white/[0.08] bg-[#1a102c] shadow-[0_14px_36px_-14px_rgba(0,0,0,0.8)] transition-shadow duration-200 group-hover:shadow-[0_18px_44px_-12px_rgba(181,101,255,0.35)]"
+        className="relative aspect-[3/4] w-full overflow-hidden rounded-[14px] border border-[rgba(217,198,234,0.10)] bg-[#17101F] shadow-[0_14px_36px_-14px_rgba(0,0,0,0.8)] transition-shadow duration-200 group-hover:shadow-[0_18px_44px_-12px_rgba(190,160,216,0.28)]"
       >
         <SmartImage
           src={game.cover}
@@ -23,9 +23,9 @@ export default function GameCard({ game, index }: { game: PopularGame; index: nu
           className="h-full w-full object-cover object-top brightness-[0.96] transition-all duration-200 group-hover:brightness-110"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent opacity-80" />
-        <div className="pointer-events-none absolute inset-0 rounded-[14px] border border-white/0 transition-all duration-200 group-hover:border-[#c084fc]/40 group-hover:shadow-[inset_0_0_20px_rgba(181,101,255,0.15)]" />
+        <div className="pointer-events-none absolute inset-0 rounded-[14px] border border-white/0 transition-all duration-200 group-hover:border-[#A07CC1]/40 group-hover:shadow-[inset_0_0_20px_rgba(190,160,216,0.15)]" />
       </motion.div>
-      <div className="mt-1.5 truncate px-0.5 text-center text-[11px] font-medium text-white/80 transition-colors group-hover:text-white">
+      <div className="mt-1.5 truncate px-0.5 text-center text-[11px] font-medium text-[#D9C6EA]/80 transition-colors group-hover:text-[#F1EAF8]">
         {game.shortTitle}
       </div>
     </motion.div>

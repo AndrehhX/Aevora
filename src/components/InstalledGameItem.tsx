@@ -15,8 +15,10 @@ export default function InstalledGameItem({
 }) {
   return (
     <motion.button
+      layout
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, y: -4 }}
       transition={{ delay: 0.08 + index * 0.05, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ x: 3 }}
       whileTap={{ scale: 0.97 }}
@@ -31,12 +33,12 @@ export default function InstalledGameItem({
           active ? 'opacity-100 shadow-[0_0_12px_rgba(190,160,216,0.55)]' : 'opacity-0'
         }`}
       />
-      <span className="relative h-[28px] w-[28px] shrink-0 overflow-hidden rounded-[7px] border border-[rgba(217,198,234,0.12)] shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+      <span className="relative h-[28px] w-[28px] shrink-0 overflow-hidden rounded-[7px] border border-[rgba(217,198,234,0.12)] bg-[rgba(74,53,96,0.25)] shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
         <SmartImage
           src={game.cover}
           fallback={game.fallback}
           alt={game.title}
-          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-110"
+          className="h-full w-full object-cover transition-all duration-200 group-hover:scale-[1.03] group-hover:brightness-110"
         />
       </span>
       <span className="min-w-0 flex-1 leading-tight">

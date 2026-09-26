@@ -57,6 +57,20 @@ body{
   border:1px solid var(--border);
 }
 
+/* elegant keyboard focus — lavender, never the default outline */
+:focus-visible{
+  outline: 1px solid rgba(190, 160, 216, 0.65);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* custom Aevora cursor takes over on fine-pointer desktops only */
+@media (pointer: fine){
+  body, body *:not(input):not(textarea){
+    cursor: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce){
   *{ animation-duration:0.01ms !important; transition-duration:0.01ms !important; }
 }

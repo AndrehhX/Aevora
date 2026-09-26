@@ -3,6 +3,7 @@ import { Menu } from 'lucide-react';
 import LibrarySearch from './LibrarySearch';
 import InstalledGameList from './InstalledGameList';
 import CommunityPanel from './CommunityPanel';
+import Tooltip from './Tooltip';
 import type { InstalledGame } from '../data/mock';
 
 export default function Sidebar({
@@ -11,12 +12,14 @@ export default function Sidebar({
   filteredGames,
   selectedId,
   setSelectedId,
+  onCommunityClick,
 }: {
   libraryQuery: string;
   setLibraryQuery: (v: string) => void;
   filteredGames: InstalledGame[];
   selectedId: string;
   setSelectedId: (id: string) => void;
+  onCommunityClick: () => void;
 }) {
   return (
     <motion.aside
@@ -27,13 +30,15 @@ export default function Sidebar({
     >
       {/* top row */}
       <div className="flex items-center gap-2">
-        <motion.button
-          whileHover={{ scale: 1.06, backgroundColor: 'rgba(74,53,96,0.32)' }}
-          whileTap={{ scale: 0.94 }}
-          className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] border border-[rgba(217,198,234,0.10)] bg-[rgba(74,53,96,0.22)] text-[#D9C6EA]/70"
-        >
-          <Menu size={15} />
-        </motion.button>
+        <Tooltip label="Menu">
+          <motion.button
+            whileHover={{ scale: 1.06, backgroundColor: 'rgba(74,53,96,0.32)' }}
+            whileTap={{ scale: 0.94 }}
+            className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] border border-[rgba(217,198,234,0.10)] bg-[rgba(74,53,96,0.22)] text-[#D9C6EA]/70"
+          >
+            <Menu size={15} />
+          </motion.button>
+        </Tooltip>
         <div className="flex-1">
           <LibrarySearch value={libraryQuery} onChange={setLibraryQuery} />
         </div>
@@ -47,7 +52,7 @@ export default function Sidebar({
         </div>
       </div>
 
-      <CommunityPanel />
+      <CommunityPanel onItemClick={onCommunityClick} />
     </motion.aside>
   );
 }

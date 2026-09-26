@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import type { InstalledGame } from '../data/mock';
 import InstalledGameItem from './InstalledGameItem';
 
@@ -14,10 +15,12 @@ export default function InstalledGameList({
     return <div className="px-2 py-4 text-[11px] text-[#BEA0D8]/40">No games found</div>;
   }
   return (
-    <div className="flex flex-col gap-[2px]">
-      {games.map((g, i) => (
-        <InstalledGameItem key={g.id} game={g} index={i} active={g.id === selectedId} onSelect={() => onSelect(g.id)} />
-      ))}
-    </div>
+    <motion.div layout className="flex flex-col gap-[2px]">
+      <AnimatePresence initial={false}>
+        {games.map((g, i) => (
+          <InstalledGameItem key={g.id} game={g} index={i} active={g.id === selectedId} onSelect={() => onSelect(g.id)} />
+        ))}
+      </AnimatePresence>
+    </motion.div>
   );
 }

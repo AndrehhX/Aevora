@@ -1,16 +1,26 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import Sidebar from './Sidebar';
 import TopNavigation from './TopNavigation';
 import HeroBanner from './HeroBanner';
 import GameCarousel from './GameCarousel';
-import { installedGames, popularGames } from '../data/mock';
+import ToastHost, { type ToastData } from './Toast';
+import CustomCursor from './CustomCursor';
+import { getGame, installedGames, popularGames } from '../data/mock';
 
 export default function AppShell() {
   const [libraryQuery, setLibraryQuery] = useState('');
   const [globalQuery, setGlobalQuery] = useState('');
-  const [selectedId, setSelectedId] = useState('cyberpunk');
+  // ONE centralized selection — sidebar + carousel + hero share it.
+  const [selectedId, setSelectedId] = useState('forza');
   const [activeNav, setActiveNav] = useState('Home');
   const [dark, setDark] = useState(true);
+  const [toast, setToast] = useState<ToastData | null>(null);
+
+  const notify = useCallback((msg: string) => {
+    setToast({ id: Date.now(), msg });
+  }, []);
+
+  const selectedGame = useMemo(() => getGame(selectedId) ?? getGame('forza')!, [selectedId]);
 
   const filteredGames = useMemo(() => {
     const q = libraryQuery.trim().toLowerCase();
@@ -37,6 +47,7 @@ export default function AppShell() {
           filteredGames={filteredGames}
           selectedId={selectedId}
           setSelectedId={setSelectedId}
+          onCommunityClick={() => notify('Community preview coming soon')}
         />
 
         <main className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden">
@@ -47,13 +58,18 @@ export default function AppShell() {
             setGlobalQuery={setGlobalQuery}
             dark={dark}
             toggleTheme={() => setDark((d) => !d)}
+            onSelectGame={setSelectedId}
+            onNotify={notify}
           />
           <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-1">
-            <HeroBanner />
-            <GameCarousel games={popularGames} />
+            <HeroBanner game={selectedGame} onCta={() => notify('Game launching will be available soon')} />
+            <GameCarousel games={popularGames} selectedId={selectedId} onSelect={setSelectedId} />
           </div>
         </main>
       </div>
+
+      <ToastHost toast={toast} onDone={() => setToast(null)} />
+      <CustomCursor />
     </div>
   );
 }

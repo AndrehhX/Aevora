@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import type { UnifiedGame } from '../domain/game';
 import { navItems } from '../data/mock';
 import GlobalSearch from './GlobalSearch';
 import ProfileDropdown, { type ProfileAction } from './ProfileDropdown';
@@ -11,6 +12,8 @@ export default function TopNavigation({
   setActiveNav,
   globalQuery,
   setGlobalQuery,
+  library,
+  favorites,
   theme,
   onCycleTheme,
   onSelectGame,
@@ -23,6 +26,8 @@ export default function TopNavigation({
   setActiveNav: (v: string) => void;
   globalQuery: string;
   setGlobalQuery: (v: string) => void;
+  library: UnifiedGame[];
+  favorites: string[];
   theme: 'aevora' | 'midnight';
   onCycleTheme: () => void;
   onSelectGame: (id: string) => void;
@@ -53,7 +58,7 @@ export default function TopNavigation({
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className="relative z-30 flex flex-col items-center"
     >
-      <GlobalSearch value={globalQuery} onChange={setGlobalQuery} onSelect={onSelectGame} />
+      <GlobalSearch library={library} favorites={favorites} value={globalQuery} onChange={setGlobalQuery} onSelect={onSelectGame} />
 
       {/* nav row */}
       <div className="mt-2 flex w-full items-center justify-between">

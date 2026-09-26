@@ -1,43 +1,48 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Search, SlidersHorizontal, X } from 'lucide-react';
-import { searchIndex, type SearchCategory } from '../data/mock';
+import type { UnifiedGame } from '../domain/game';
+import { getInstalledGames, isInstalled, searchGames } from '../domain/library';
+import type { ProviderId } from '../domain/provider';
+import { providerDefinitions } from '../domain/provider';
 import { DURATION, EASE } from '../motion/presets';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { SmartImage } from './SmartImage';
+import ProviderBadge from './ProviderBadge';
 import Tooltip from './Tooltip';
 
-type Filter = 'all' | SearchCategory;
-const FILTERS: Array<{ id: Filter; label: string }> = [
-  { id: 'all', label: 'All' },
-  { id: 'installed', label: 'Installed' },
-  { id: 'popular', label: 'Popular' },
-  { id: 'indie', label: 'Indie' },
-];
+export type SearchFilter = 'all' | 'installed' | 'favorites' | ProviderId;
+
+const PROVIDER_FILTERS: ProviderId[] = ['steam', 'epic', 'gog', 'ea'];
 
 export default function GlobalSearch({
+  library,
+  favorites,
   value,
   onChange,
   onSelect,
 }: {
+  library: UnifiedGame[];
+  favorites: string[];
   value: string;
   onChange: (v: string) => void;
   onSelect: (id: string) => void;
 }) {
   const [focused, setFocused] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [filter, setFilter] = useState<Filter>('all');
+  const [filter, setFilter] = useState<SearchFilter>('all');
   const [filterOpen, setFilterOpen] = useState(false);
   const open = focused && value.length > 0;
 
   const results = useMemo(() => {
-    const q = value.trim().toLowerCase();
-    if (!q) return [];
-    return searchIndex
-      .filter((g) => (filter === 'all' ? true : g.category === filter))
-      .filter((g) => g.title.toLowerCase().includes(q))
-      .slice(0, 5);
-  }, [value, filter]);
+    let pool = searchGames(library, value).slice(0, 6);
+    if (filter === 'installed') pool = pool.filter(isInstalled);
+    else if (filter === 'favorites') pool = pool.filter((g) => favorites.includes(g.id));
+    else if (filter !== 'all') pool = pool.filter((g) => g.providers.some((p) => p.provider === filter && p.owned));
+    return pool.slice(0, 5);
+  }, [library, value, filter, favorites]);
+
+  const installedCount = useMemo(() => getInstalledGames(library).length, [library]);
 
   useEffect(() => setActiveIndex(0), [value, filter]);
 
@@ -56,13 +61,15 @@ export default function GlobalSearch({
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open, filterOpen]);
+  }, [open, filterOpen ]);
 
   const choose = (id: string) => {
     onSelect(id);
     onChange('');
     setFocused(false);
   };
+
+  const firstProvider = (g: UnifiedGame): ProviderId | undefined => g.providers.find((p) => p.owned)?.provider;
 
   return (
     <div ref={ref} className="relative w-[min(400px,42%)]">
@@ -136,7 +143,14 @@ export default function GlobalSearch({
             transition={{ duration: DURATION.micro, ease: EASE.out }}
             className="absolute right-0 top-[38px] z-[60] w-[150px] overflow-hidden rounded-[12px] border border-[rgba(217,198,234,0.12)] bg-[rgba(23,16,31,0.97)] p-1 shadow-2xl backdrop-blur-2xl"
           >
-            {FILTERS.map((f) => (
+            {(
+              [
+                { id: 'all', label: 'All' },
+                { id: 'installed', label: `Installed · ${installedCount}` },
+                { id: 'favorites', label: `Favorites · ${favorites.length}` },
+                ...PROVIDER_FILTERS.map((p) => ({ id: p as SearchFilter, label: providerDefinitions[p].name })),
+              ] as Array<{ id: SearchFilter; label: string }>
+            ).map((f) => (
               <button
                 key={f.id}
                 onClick={() => {
@@ -165,33 +179,37 @@ export default function GlobalSearch({
             transition={{ duration: DURATION.fast, ease: EASE.out }}
             className="absolute left-0 right-0 top-[38px] z-50 overflow-hidden rounded-[14px] border border-[rgba(217,198,234,0.10)] bg-[#17101F]/95 p-1.5 shadow-2xl backdrop-blur-2xl"
           >
-            {filter !== 'all' && (
-              <div className="px-2.5 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-[#BEA0D8]/50">
-                {FILTERS.find((f) => f.id === filter)?.label}
-              </div>
-            )}
             {results.length === 0 && <div className="px-3 py-2 text-[12px] text-[#BEA0D8]/50">No results</div>}
-            {results.map((r, i) => (
-              <div
-                key={r.id}
-                id={`gs-${r.id}`}
-                onMouseEnter={() => setActiveIndex(i)}
-                onClick={() => choose(r.id)}
-                className={`flex cursor-pointer items-center gap-2.5 rounded-[10px] p-1.5 transition-colors ${
-                  i === activeIndex ? 'bg-[rgba(130,99,161,0.28)]' : 'hover:bg-[rgba(74,53,96,0.32)]'
-                }`}
-              >
-                <span className="h-[36px] w-[28px] shrink-0 overflow-hidden rounded-[6px] bg-[rgba(74,53,96,0.25)]">
-                  <SmartImage src={r.cover} fallback={r.fallback} alt={r.title} className="h-full w-full object-cover" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12px] font-medium text-[#D9C6EA]/85">{r.title}</span>
-                  <span className="block text-[10px] text-[#BEA0D8]/50">
-                    {r.categoryLabel}{r.status ? ` · ${r.status}` : ''}
+            {results.map((r, i) => {
+              const fp = firstProvider(r);
+              return (
+                <div
+                  key={r.id}
+                  id={`gs-${r.id}`}
+                  onMouseEnter={() => setActiveIndex(i)}
+                  onClick={() => choose(r.id)}
+                  className={`flex cursor-pointer items-center gap-2.5 rounded-[10px] p-1.5 transition-colors ${
+                    i === activeIndex ? 'bg-[rgba(130,99,161,0.28)]' : 'hover:bg-[rgba(74,53,96,0.32)]'
+                  }`}
+                >
+                  <span className="h-[36px] w-[28px] shrink-0 overflow-hidden rounded-[6px] bg-[rgba(74,53,96,0.25)]">
+                    {r.artwork.cover ? (
+                      <SmartImage src={r.artwork.cover} fallback={r.artwork.coverFallback} alt={r.title} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#4A3560] to-[#8263A1] text-[12px] font-bold text-white">P</span>
+                    )}
                   </span>
-                </span>
-              </div>
-            ))}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12px] font-medium text-[#D9C6EA]/85">{r.title}</span>
+                    <span className="block truncate text-[10px] text-[#BEA0D8]/50">
+                      {r.metadata?.developer ?? ''}
+                      {isInstalled(r) ? ' · Installed' : ''}
+                    </span>
+                  </span>
+                  {fp && <ProviderBadge provider={fp} tone="faint" />}
+                </div>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>

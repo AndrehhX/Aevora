@@ -1,24 +1,16 @@
 import { motion } from 'framer-motion';
-import type { PopularGame } from '../data/mock';
-import { getGame, popularGames, storeDealIds, storeFeaturedIds } from '../data/mock';
+import type { UnifiedGame } from '../domain/game';
+import { carouselIds, getLibraryGame, storeDealIds, storeFeaturedIds } from '../data/library';
 import { EASE } from '../motion/presets';
 import GameCard from '../components/GameCard';
 
-function toPopular(ids: string[]): PopularGame[] {
-  return ids
-    .map((id) => {
-      const direct = popularGames.find((p) => p.id === id);
-      if (direct) return direct;
-      const g = getGame(id);
-      if (!g) return undefined;
-      return { ...g, shortTitle: g.title } as PopularGame;
-    })
-    .filter((g): g is PopularGame => !!g);
+function byIds(ids: string[]): UnifiedGame[] {
+  return ids.map(getLibraryGame).filter((g): g is UnifiedGame => !!g);
 }
 
 function Row({ title, games, selectedId, onPick, deals }: {
   title: string;
-  games: PopularGame[];
+  games: UnifiedGame[];
   selectedId: string;
   onPick: (id: string) => void;
   deals?: Record<string, string>;
@@ -42,6 +34,8 @@ function Row({ title, games, selectedId, onPick, deals }: {
   );
 }
 
+// Store catalog is separate from the owned library: ownership/installation
+// always resolve from library entries by canonical id.
 export default function StoreView({
   selectedId,
   onSelect,
@@ -59,9 +53,9 @@ export default function StoreView({
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE.out }} className="flex flex-col gap-4">
-      <Row title="Featured" games={toPopular(storeFeaturedIds)} selectedId={selectedId} onPick={pick} />
-      <Row title="Popular" games={popularGames} selectedId={selectedId} onPick={pick} />
-      <Row title="Deals" games={toPopular(storeDealIds.map((d) => d.id))} selectedId={selectedId} onPick={pick} deals={deals} />
+      <Row title="Featured" games={byIds(storeFeaturedIds)} selectedId={selectedId} onPick={pick} />
+      <Row title="Popular" games={byIds(carouselIds)} selectedId={selectedId} onPick={pick} />
+      <Row title="Deals" games={byIds(storeDealIds.map((d) => d.id))} selectedId={selectedId} onPick={pick} deals={deals} />
     </motion.div>
   );
 }

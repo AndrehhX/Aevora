@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { PopularGame } from '../data/mock';
+import type { UnifiedGame } from '../domain/game';
 import { CARD_STAGGER, EASE, SPRING } from '../motion/presets';
 import { SmartImage } from './SmartImage';
 
@@ -11,7 +11,7 @@ export default function GameCard({
   onSelect,
   onFocus,
 }: {
-  game: PopularGame;
+  game: UnifiedGame;
   index: number;
   selected: boolean;
   focused?: boolean;
@@ -39,8 +39,8 @@ export default function GameCard({
         } ${focused ? 'ring-1 ring-[rgba(190,160,216,0.8)] ring-offset-2 ring-offset-[#0D0912]' : ''}`}
       >
         <SmartImage
-          src={game.cover}
-          fallback={game.fallback}
+          src={game.artwork.cover}
+          fallback={game.artwork.coverFallback}
           alt={game.title}
           className={`h-full w-full object-cover object-top transition-all duration-200 group-hover:brightness-110 ${
             selected ? 'brightness-[1.04]' : 'brightness-[0.96]'
@@ -60,7 +60,7 @@ export default function GameCard({
           selected ? 'text-[#F1EAF8]' : 'text-[#D9C6EA]/80 group-hover:text-[#F1EAF8]'
         }`}
       >
-        {game.shortTitle}
+        {game.title}
       </div>
     </motion.div>
   );

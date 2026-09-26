@@ -1,28 +1,10 @@
 import { motion } from 'framer-motion';
 import Modal from './Modal';
 import Toggle from './Toggle';
+import { DEFAULT_STATE, type PersistedPrefs as Prefs } from '../domain/storage';
 
-export interface Prefs {
-  theme: 'aevora' | 'midnight';
-  sidebarCollapsed: boolean;
-  cursor: boolean;
-  parallax: boolean;
-  inertia: boolean;
-  startOnHome: boolean;
-  rememberGame: boolean;
-  reduceMotion: boolean;
-}
-
-export const DEFAULT_PREFS: Prefs = {
-  theme: 'aevora',
-  sidebarCollapsed: false,
-  cursor: true,
-  parallax: true,
-  inertia: true,
-  startOnHome: true,
-  rememberGame: true,
-  reduceMotion: false,
-};
+export const DEFAULT_PREFS = DEFAULT_STATE.prefs;
+export type { PersistedPrefs as Prefs } from '../domain/storage';
 
 function Row({ label, hint, control }: { label: string; hint?: string; control: React.ReactNode }) {
   return (

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { PopularGame } from '../data/mock';
+import type { UnifiedGame } from '../domain/game';
 import { DURATION, EASE } from '../motion/presets';
 import GameCard from './GameCard';
 import Tooltip from './Tooltip';
@@ -12,7 +12,7 @@ export default function GameCarousel({
   onSelect,
   inertia = true,
 }: {
-  games: PopularGame[];
+  games: UnifiedGame[];
   selectedId: string;
   onSelect: (id: string) => void;
   inertia?: boolean;

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import type { InstalledGame } from '../data/mock';
+import type { UnifiedGame } from '../domain/game';
 import InstalledGameItem from './InstalledGameItem';
 
 export default function InstalledGameList({
@@ -8,7 +8,7 @@ export default function InstalledGameList({
   onSelect,
   compact = false,
 }: {
-  games: InstalledGame[];
+  games: UnifiedGame[];
   selectedId: string;
   onSelect: (id: string) => void;
   compact?: boolean;

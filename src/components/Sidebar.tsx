@@ -4,7 +4,8 @@ import LibrarySearch from './LibrarySearch';
 import InstalledGameList from './InstalledGameList';
 import CommunityPanel from './CommunityPanel';
 import Tooltip from './Tooltip';
-import type { CommunityItem, InstalledGame } from '../data/mock';
+import type { UnifiedGame } from '../domain/game';
+import type { CommunityItem } from '../data/mock';
 
 export default function Sidebar({
   libraryQuery,
@@ -18,7 +19,7 @@ export default function Sidebar({
 }: {
   libraryQuery: string;
   setLibraryQuery: (v: string) => void;
-  filteredGames: InstalledGame[];
+  filteredGames: UnifiedGame[];
   selectedId: string;
   setSelectedId: (id: string) => void;
   onCommunityClick: (item: CommunityItem) => void;

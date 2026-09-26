@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { InstalledGame } from '../data/mock';
+import type { UnifiedGame } from '../domain/game';
 import { SmartImage } from './SmartImage';
 
 export default function InstalledGameItem({
@@ -9,7 +9,7 @@ export default function InstalledGameItem({
   onSelect,
   compact = false,
 }: {
-  game: InstalledGame;
+  game: UnifiedGame;
   active: boolean;
   index: number;
   onSelect: () => void;
@@ -39,8 +39,8 @@ export default function InstalledGameItem({
       />
       <span className="relative h-[28px] w-[28px] shrink-0 overflow-hidden rounded-[7px] border border-[rgba(217,198,234,0.12)] bg-[rgba(74,53,96,0.25)] shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
         <SmartImage
-          src={game.cover}
-          fallback={game.fallback}
+          src={game.artwork.cover}
+          fallback={game.artwork.coverFallback}
           alt={game.title}
           className="h-full w-full object-cover transition-all duration-200 group-hover:scale-[1.03] group-hover:brightness-110"
         />

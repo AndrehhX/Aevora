@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { Gamepad2, Clock, Heart } from 'lucide-react';
-import type { ResolvedGame } from '../data/mock';
-import { getGame, installedGames } from '../data/mock';
+import type { UnifiedGame } from '../domain/game';
+import { getInstalledGames } from '../domain/library';
+import { getLibraryGame, libraryGames } from '../data/library';
 import Modal from './Modal';
 import { SmartImage } from './SmartImage';
 
@@ -16,7 +17,7 @@ export default function ProfilePanel({
   onSelectGame: (id: string) => void;
   onClose: () => void;
 }) {
-  const favGames = favorites.map(getGame).filter((g): g is ResolvedGame => !!g);
+  const favGames = favorites.map(getLibraryGame).filter((g): g is UnifiedGame => !!g);
 
   return (
     <Modal open={open} onClose={onClose} labelledBy="profile-title" panelClass="max-w-[400px]">
@@ -38,7 +39,7 @@ export default function ProfilePanel({
 
         <div className="mt-4 grid grid-cols-3 gap-2">
           {[
-            { icon: Gamepad2, v: String(installedGames.length), k: 'Games' },
+            { icon: Gamepad2, v: String(getInstalledGames(libraryGames).length), k: 'Games' },
             { icon: Clock, v: '1,240h', k: 'Played' },
             { icon: Heart, v: String(favGames.length), k: 'Favorites' },
           ].map((s) => (
@@ -68,15 +69,15 @@ export default function ProfilePanel({
                 className="flex items-center gap-2.5 rounded-[10px] p-1.5 text-left transition-colors hover:bg-[rgba(74,53,96,0.32)]"
               >
                 <span className="h-[34px] w-[27px] shrink-0 overflow-hidden rounded-[6px] bg-[rgba(74,53,96,0.25)]">
-                  {g.cover ? (
-                    <SmartImage src={g.cover} fallback={g.fallback} alt={g.title} className="h-full w-full object-cover" />
+                  {g.artwork.cover ? (
+                    <SmartImage src={g.artwork.cover} fallback={g.artwork.coverFallback} alt={g.title} className="h-full w-full object-cover" />
                   ) : (
                     <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#4A3560] to-[#8263A1] text-[12px] font-bold text-white">P</span>
                   )}
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-[12px] font-medium text-[#F1EAF8]/90">{g.title}</span>
-                  {g.status && <span className="block text-[10px] text-[#BEA0D8]/55">{g.status}</span>}
+                  {(g.subtitle ?? g.highlight) && <span className="block text-[10px] text-[#BEA0D8]/55">{g.subtitle ?? g.highlight}</span>}
                 </span>
               </motion.button>
             ))}

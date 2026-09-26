@@ -7,58 +7,57 @@ import GameCarousel from './GameCarousel';
 import ToastHost, { type ToastData } from './Toast';
 import CustomCursor from './CustomCursor';
 import GameDetails from './GameDetails';
-import SettingsPanel, { DEFAULT_PREFS, type Prefs } from './SettingsPanel';
+import SettingsPanel from './SettingsPanel';
 import ProfilePanel from './ProfilePanel';
 import CommunityPreview from './CommunityPreview';
 import SignOutDialog from './SignOutDialog';
+import ProviderSelector from './ProviderSelector';
 import StoreView from '../views/StoreView';
 import CommunityView from '../views/CommunityView';
 import { EarlyView, IndiesView } from '../views/Collections';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { getInstalledGames } from '../domain/library';
+import type { GameProviderEntry, ProviderId } from '../domain/provider';
+import { providerName } from '../domain/provider';
+import type { UnifiedGame } from '../domain/game';
+import { DEFAULT_STATE, loadState, saveState, type PersistedPrefs } from '../domain/storage';
 import { EASE } from '../motion/presets';
-import { communityItems, getGame, installedGames, popularGames, type CommunityItem } from '../data/mock';
+import { carouselIds, getLibraryGame, libraryGames } from '../data/library';
+import type { CommunityItem } from '../data/mock';
+import { communityItems, navItems } from '../data/mock';
 
 type Overlay =
   | { type: 'game'; id: string }
+  | { type: 'provider'; id: string; mode: 'play' | 'install' }
   | { type: 'settings' }
   | { type: 'profile' }
   | { type: 'community'; item: CommunityItem }
   | { type: 'signout' };
 
-const BACKGROUNDS: Record<Prefs['theme'], string> = {
+const BACKGROUNDS: Record<PersistedPrefs['theme'], string> = {
   aevora:
     'radial-gradient(1200px 700px at 70% -10%, rgba(101,74,127,0.20), transparent 60%), radial-gradient(900px 600px at 8% 108%, rgba(74,53,96,0.22), transparent 60%), radial-gradient(700px 500px at 50% 50%, rgba(74,53,96,0.12), transparent 70%), linear-gradient(180deg,#17101F 0%,#0D0912 55%,#0D0912 100%)',
   midnight:
     'radial-gradient(1200px 700px at 70% -10%, rgba(90,110,200,0.14), transparent 60%), radial-gradient(900px 600px at 8% 108%, rgba(74,53,96,0.16), transparent 60%), radial-gradient(700px 500px at 50% 50%, rgba(60,70,140,0.10), transparent 70%), linear-gradient(180deg,#12121e 0%,#0b0b14 60%,#090910 100%)',
 };
 
-function sanitizePrefs(raw: Prefs): Prefs {
-  return {
-    theme: raw.theme === 'midnight' ? 'midnight' : 'aevora',
-    sidebarCollapsed: !!raw.sidebarCollapsed,
-    cursor: raw.cursor !== false,
-    parallax: raw.parallax !== false,
-    inertia: raw.inertia !== false,
-    startOnHome: raw.startOnHome !== false,
-    rememberGame: raw.rememberGame !== false,
-    reduceMotion: !!raw.reduceMotion,
-  };
-}
+const VALID_NAV = new Set(navItems);
 
 export default function AppShell() {
-  const [prefsRaw, setPrefs] = useLocalStorage<Prefs>('aevora:prefs', DEFAULT_PREFS);
-  const prefs = useMemo(() => sanitizePrefs({ ...DEFAULT_PREFS, ...prefsRaw }), [prefsRaw]);
+  // Centralized prototype state — one versioned blob, safe defaults.
+  const [store, setStore] = useState(loadState);
+  useEffect(() => saveState(store), [store]);
+
+  const prefs = store.prefs.theme === 'midnight' ? { ...store.prefs, theme: 'midnight' as const } : { ...store.prefs, theme: 'aevora' as const };
 
   const [libraryQuery, setLibraryQuery] = useState('');
   const [globalQuery, setGlobalQuery] = useState('');
-  const [favorites, setFavorites] = useLocalStorage<string[]>('aevora:favorites', []);
-  const [lastPlayed, setLastPlayed] = useLocalStorage<Record<string, number>>('aevora:lastPlayed', {});
-  const [storedGame, setStoredGame] = useLocalStorage<string>('aevora:lastGame', 'forza');
-  const [storedNav, setStoredNav] = useLocalStorage<string>('aevora:lastNav', 'Home');
-
   // ONE centralized selection — sidebar + carousel + hero + views share it.
-  const [selectedId, setSelectedId] = useState(() => (prefsRaw.rememberGame !== false && storedGame && getGame(storedGame) ? storedGame : 'forza'));
-  const [activeNav, setActiveNav] = useState(() => (prefsRaw.startOnHome !== false ? 'Home' : storedNav || 'Home'));
+  const [selectedId, setSelectedId] = useState(() =>
+    store.prefs.rememberGame && getLibraryGame(store.lastSelectedGame) ? store.lastSelectedGame : 'forza'
+  );
+  const [activeNav, setActiveNav] = useState(() =>
+    store.prefs.startOnHome ? 'Home' : VALID_NAV.has(store.lastNav) ? store.lastNav : 'Home'
+  );
   const [overlay, setOverlay] = useState<Overlay | null>(null);
   const [toast, setToast] = useState<ToastData | null>(null);
 
@@ -68,20 +67,18 @@ export default function AppShell() {
 
   const selectGame = useCallback(
     (id: string) => {
-      if (!getGame(id)) return;
+      if (!getLibraryGame(id)) return;
       setSelectedId(id);
-      if (prefs.rememberGame) setStoredGame(id);
+      setStore((s) => (s.prefs.rememberGame ? { ...s, lastSelectedGame: id } : s));
     },
-    [prefs.rememberGame, setStoredGame]
+    []
   );
 
-  const changeNav = useCallback(
-    (nav: string) => {
-      setActiveNav(nav);
-      setStoredNav(nav);
-    },
-    [setStoredNav]
-  );
+  const changeNav = useCallback((nav: string) => {
+    if (!VALID_NAV.has(nav)) return;
+    setActiveNav(nav);
+    setStore((s) => ({ ...s, lastNav: nav }));
+  }, []);
 
   const openOverlay = useCallback((o: Overlay) => {
     setOverlay(o);
@@ -102,38 +99,67 @@ export default function AppShell() {
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [overlay]);
+  }, [overlay ]);
 
   const toggleFav = useCallback(
     (id: string) => {
-      setFavorites((prev) => {
-        const has = prev.includes(id);
-        const g = getGame(id);
-        notify(has ? `Removed ${g?.title ?? 'game'} from favorites` : `Added ${g?.title ?? 'game'} to favorites`);
-        return has ? prev.filter((f) => f !== id) : [...prev, id];
+      const g = getLibraryGame(id);
+      if (!g) return;
+      setStore((s) => {
+        const has = s.favorites.includes(id);
+        if (has) notify(`Removed ${g.title} from favorites`);
+        else notify(`Added ${g.title} to favorites`);
+        return { ...s, favorites: has ? s.favorites.filter((f) => f !== id) : [...s.favorites, id] };
       });
     },
-    [notify, setFavorites]
+    [notify]
   );
 
-  const handlePlayed = useCallback(
-    (id: string) => {
-      setLastPlayed((prev) => ({ ...prev, [id]: Date.now() }));
-      notify('Game launch simulation');
+  const handlePlay = useCallback(
+    (game: UnifiedGame, entry: GameProviderEntry) => {
+      setStore((s) => ({ ...s, playHistory: { ...s.playHistory, [game.id]: Date.now() } }));
+      notify(`Launching with ${providerName(entry.provider)}...`);
     },
-    [notify, setLastPlayed]
+    [notify]
   );
 
-  const selectedGame = useMemo(() => getGame(selectedId) ?? getGame('forza')!, [selectedId]);
-  const safeFavorites = useMemo(() => (Array.isArray(favorites) ? favorites.filter((f) => getGame(f)) : []), [favorites]);
+  const handleInstall = useCallback(
+    (_game: UnifiedGame, entry: GameProviderEntry) => {
+      notify(`Opening ${providerName(entry.provider)}...`);
+    },
+    [notify]
+  );
 
-  const filteredGames = useMemo(() => {
+  const handleProviderPick = useCallback(
+    (game: UnifiedGame, mode: 'play' | 'install', entry: GameProviderEntry, remember: boolean) => {
+      if (remember) {
+        const provider: ProviderId = entry.provider;
+        setStore((s) => ({ ...s, preferredProviders: { ...s.preferredProviders, [game.id]: provider } }));
+      }
+      setOverlay(null);
+      if (mode === 'play') handlePlay(game, entry);
+      else handleInstall(game, entry);
+    },
+    [handlePlay, handleInstall]
+  );
+
+  const selectedGame = useMemo(() => getLibraryGame(selectedId) ?? getLibraryGame('forza')!, [selectedId]);
+  const carouselGames = useMemo(() => carouselIds.map(getLibraryGame).filter((g): g is UnifiedGame => !!g), []);
+  const safeFavorites = useMemo(
+    () => (Array.isArray(store.favorites) ? store.favorites.filter((f) => getLibraryGame(f)) : []),
+    [store.favorites]
+  );
+
+  // Ready To Play derives from installed state — no separate sidebar list.
+  const readyToPlay = useMemo(() => {
     const q = libraryQuery.trim().toLowerCase();
-    if (!q) return installedGames;
-    return installedGames.filter((g) => g.title.toLowerCase().includes(q));
+    const installed = getInstalledGames(libraryGames);
+    if (!q) return installed;
+    return installed.filter((g) => g.title.toLowerCase().includes(q));
   }, [libraryQuery]);
 
-  const gameOverlay = overlay?.type === 'game' ? getGame(overlay.id) ?? null : null;
+  const gameOverlay = overlay?.type === 'game' ? getLibraryGame(overlay.id) ?? null : null;
+  const providerOverlay = overlay?.type === 'provider' ? getLibraryGame(overlay.id) ?? null : null;
 
   return (
     <div className="relative h-screen w-screen overflow-hidden" style={{ background: BACKGROUNDS[prefs.theme] }}>
@@ -144,12 +170,12 @@ export default function AppShell() {
         <Sidebar
           libraryQuery={libraryQuery}
           setLibraryQuery={setLibraryQuery}
-          filteredGames={filteredGames}
+          filteredGames={readyToPlay}
           selectedId={selectedId}
           setSelectedId={selectGame}
           onCommunityClick={(item) => openOverlay({ type: 'community', item })}
           collapsed={prefs.sidebarCollapsed}
-          onToggleCollapse={() => setPrefs({ ...prefs, sidebarCollapsed: !prefs.sidebarCollapsed })}
+          onToggleCollapse={() => setStore((s) => ({ ...s, prefs: { ...s.prefs, sidebarCollapsed: !s.prefs.sidebarCollapsed } }))}
         />
 
         <main className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden">
@@ -158,8 +184,12 @@ export default function AppShell() {
             setActiveNav={changeNav}
             globalQuery={globalQuery}
             setGlobalQuery={setGlobalQuery}
+            library={libraryGames}
+            favorites={safeFavorites}
             theme={prefs.theme}
-            onCycleTheme={() => setPrefs({ ...prefs, theme: prefs.theme === 'aevora' ? 'midnight' : 'aevora' })}
+            onCycleTheme={() =>
+              setStore((s) => ({ ...s, prefs: { ...s.prefs, theme: s.prefs.theme === 'aevora' ? 'midnight' : 'aevora' } }))
+            }
             onSelectGame={selectGame}
             onOpenSettings={() => openOverlay({ type: 'settings' })}
             onOpenProfile={() => openOverlay({ type: 'profile' })}
@@ -184,7 +214,7 @@ export default function AppShell() {
                       parallax={prefs.parallax}
                       forceReduced={prefs.reduceMotion}
                     />
-                    <GameCarousel games={popularGames} selectedId={selectedId} onSelect={selectGame} inertia={prefs.inertia} />
+                    <GameCarousel games={carouselGames} selectedId={selectedId} onSelect={selectGame} inertia={prefs.inertia} />
                   </>
                 )}
                 {activeNav === 'Store' && (
@@ -206,11 +236,28 @@ export default function AppShell() {
         open={overlay?.type === 'game'}
         isFav={overlay?.type === 'game' ? safeFavorites.includes(overlay.id) : false}
         onToggleFav={toggleFav}
-        lastPlayed={overlay?.type === 'game' ? lastPlayed[overlay.id] : undefined}
-        onPlayed={handlePlayed}
+        preferred={overlay?.type === 'game' ? store.preferredProviders[overlay.id] : undefined}
+        sessionLastPlayed={overlay?.type === 'game' ? store.playHistory[overlay.id] : undefined}
+        onPlay={handlePlay}
+        onInstall={handleInstall}
+        onNeedProviderChoice={(g, mode) => openOverlay({ type: 'provider', id: g.id, mode })}
         onClose={() => setOverlay(null)}
       />
-      <SettingsPanel open={overlay?.type === 'settings'} prefs={prefs} onChange={setPrefs} onClose={() => setOverlay(null)} />
+      <ProviderSelector
+        game={providerOverlay}
+        mode={overlay?.type === 'provider' ? overlay.mode : 'play'}
+        open={overlay?.type === 'provider'}
+        onPick={(entry, remember) => {
+          if (providerOverlay && overlay?.type === 'provider') handleProviderPick(providerOverlay, overlay.mode, entry, remember);
+        }}
+        onClose={() => setOverlay(null)}
+      />
+      <SettingsPanel
+        open={overlay?.type === 'settings'}
+        prefs={prefs}
+        onChange={(p) => setStore((s) => ({ ...s, prefs: { ...DEFAULT_STATE.prefs, ...p } }))}
+        onClose={() => setOverlay(null)}
+      />
       <ProfilePanel
         open={overlay?.type === 'profile'}
         favorites={safeFavorites}

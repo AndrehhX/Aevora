@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SteamClient, SteamConnectionResponse, SteamOwnedGame } from '../../src/integrations/steam/steamClient';
+import type { SteamCredentialsInput, SteamCredentialClient } from '../../src/integrations/steam/steamCredentials';
 import { createMemoryCacheStore } from '../../src/integrations/cache/cacheStore';
 import { createSteamAdapter, SteamAdapterError } from '../../src/integrations/steam/steamAdapter';
 
@@ -23,6 +24,22 @@ function clientWith(overrides: Partial<SteamClient> = {}): SteamClient {
 }
 
 describe('SteamAdapter', () => {
+  it('delegates local credential setup without adding it to persisted game state', async () => {
+    const calls: string[] = [];
+    const credentials: SteamCredentialClient = {
+      save: async (input: SteamCredentialsInput) => calls.push(`save:${input.account}`),
+      has: async () => { calls.push('has'); return false; },
+      clear: async () => { calls.push('clear'); },
+    };
+    const adapter = createSteamAdapter({ client: clientWith(), cache: createMemoryCacheStore(), credentials });
+
+    await adapter.saveCredentials({ account: 'andreh', apiKey: 'secret' });
+    await expect(adapter.hasCredentials()).resolves.toBe(false);
+    await adapter.clearCredentials();
+
+    expect(calls).toEqual(['save:andreh', 'has', 'clear']);
+  });
+
   it('normalizes a connected account and its owned games', async () => {
     const adapter = createSteamAdapter({ client: clientWith(), cache: createMemoryCacheStore() });
 
@@ -31,6 +48,7 @@ describe('SteamAdapter', () => {
       {
         id: 'steam:570',
         title: 'Dota 2',
+        artwork: { logo: 'https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/570/logo-hash.jpg' },
         providers: [{ provider: 'steam', externalId: '570', owned: true, installed: false, playtimeMinutes: 120 }],
       },
     ]);

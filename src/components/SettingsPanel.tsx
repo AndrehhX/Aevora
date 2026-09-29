@@ -4,6 +4,7 @@ import Toggle from './Toggle';
 import { DEFAULT_STATE, type PersistedPrefs as Prefs } from '../domain/storage';
 import type { ConnectionState } from '../integrations/steam/steamAdapter';
 import ProviderConnectPanel from './ProviderConnectPanel';
+import type { SteamCredentialsInput } from '../integrations/steam/steamCredentials';
 
 export const DEFAULT_PREFS = DEFAULT_STATE.prefs;
 export type { PersistedPrefs as Prefs } from '../domain/storage';
@@ -37,6 +38,9 @@ export default function SettingsPanel({
   steamConnection = { status: 'disconnected' },
   onSteamConnect = () => undefined,
   onSteamDisconnect = () => undefined,
+  onSteamSaveCredentials = () => undefined,
+  onSteamClearCredentials = () => undefined,
+  steamNativeAvailable = true,
 }: {
   open: boolean;
   prefs: Prefs;
@@ -45,6 +49,9 @@ export default function SettingsPanel({
   steamConnection?: ConnectionState;
   onSteamConnect?: () => Promise<void> | void;
   onSteamDisconnect?: () => Promise<void> | void;
+  onSteamSaveCredentials?: (credentials: SteamCredentialsInput) => Promise<void> | void;
+  onSteamClearCredentials?: () => Promise<void> | void;
+  steamNativeAvailable?: boolean;
 }) {
   const set = <K extends keyof Prefs>(k: K, v: Prefs[K]) => onChange({ ...prefs, [k]: v });
 
@@ -61,7 +68,14 @@ export default function SettingsPanel({
         </Section>
 
         <Section title="Providers">
-          <ProviderConnectPanel connection={steamConnection} onConnect={onSteamConnect} onDisconnect={onSteamDisconnect} />
+          <ProviderConnectPanel
+            connection={steamConnection}
+            onConnect={onSteamConnect}
+            onDisconnect={onSteamDisconnect}
+            onSaveCredentials={onSteamSaveCredentials}
+            onClearCredentials={onSteamClearCredentials}
+            nativeAvailable={steamNativeAvailable}
+          />
         </Section>
 
         <Section title="Appearance">

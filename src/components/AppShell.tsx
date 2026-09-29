@@ -29,6 +29,8 @@ import { createLocalCacheStore } from '../integrations/cache/cacheStore';
 import { createSteamAdapter, SteamAdapterError, type ConnectionState } from '../integrations/steam/steamAdapter';
 import type { SteamNewsItem } from '../integrations/steam/steamNews';
 import { launchGame, openStore, type LaunchResult } from '../integrations/steam/steamLaunch';
+import { getDesktopBridge } from '../integrations/desktop/bridge';
+import type { SteamCredentialsInput } from '../integrations/steam/steamCredentials';
 
 type Overlay =
   | { type: 'game'; id: string }
@@ -68,6 +70,7 @@ export default function AppShell() {
   const steamAdapter = useMemo(() => createSteamAdapter({ cache: createLocalCacheStore() }), []);
   const [steamConnection, setSteamConnection] = useState<ConnectionState>({ status: 'disconnected' });
   const [steamNews, setSteamNews] = useState<SteamNewsItem[]>([]);
+  const nativeAvailable = useMemo(() => getDesktopBridge().isNative, []);
 
   const notify = useCallback((msg: string) => {
     setToast({ id: Date.now(), msg });
@@ -109,6 +112,17 @@ export default function AppShell() {
       notify('Steam could not be disconnected.');
     }
   }, [notify, steamAdapter]);
+
+  const saveSteamCredentials = useCallback(async (credentials: SteamCredentialsInput) => {
+    await steamAdapter.saveCredentials(credentials);
+    notify('Steam setup saved locally on this PC.');
+  }, [notify, steamAdapter]);
+
+  const clearSteamCredentials = useCallback(async () => {
+    await steamAdapter.clearCredentials();
+    await disconnectSteam();
+    notify('Local Steam setup cleared.');
+  }, [disconnectSteam, notify, steamAdapter]);
 
   const selectGame = useCallback(
     (id: string) => {
@@ -321,6 +335,9 @@ export default function AppShell() {
         steamConnection={steamConnection}
         onSteamConnect={connectSteam}
         onSteamDisconnect={disconnectSteam}
+        onSteamSaveCredentials={saveSteamCredentials}
+        onSteamClearCredentials={clearSteamCredentials}
+        steamNativeAvailable={nativeAvailable}
       />
       <ProfilePanel
         open={overlay?.type === 'profile'}

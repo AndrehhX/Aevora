@@ -3,6 +3,7 @@ import type { UnifiedGame } from '../../domain/game';
 import type { SteamAppDetails, SteamClient, SteamConnectionResponse, SteamOwnedGame } from './steamClient';
 import { createSteamClient } from './steamClient';
 import { createSteamNewsLoader, type SteamNewsResult } from './steamNews';
+import { createSteamCredentialClient, type SteamCredentialClient, type SteamCredentialsInput } from './steamCredentials';
 
 export type ConnectionState =
   | { status: 'disconnected' }
@@ -19,6 +20,9 @@ export class SteamAdapterError extends Error {
 }
 
 export interface SteamAdapter {
+  saveCredentials(credentials: SteamCredentialsInput): Promise<void>;
+  hasCredentials(): Promise<boolean>;
+  clearCredentials(): Promise<void>;
   connect(): Promise<ConnectionState>;
   disconnect(): Promise<void>;
   getLibrary(): Promise<UnifiedGame[]>;
@@ -29,12 +33,14 @@ export interface SteamAdapter {
 
 interface SteamAdapterOptions {
   client?: SteamClient;
+  credentials?: SteamCredentialClient;
   cache: CacheStore;
   now?: () => number;
   libraryTtlMs?: number;
 }
 
 const LIBRARY_TTL_MS = 5 * 60 * 1000;
+const STEAM_COMMUNITY_ASSET_BASE = 'https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps';
 
 function mapConnection(response: SteamConnectionResponse): ConnectionState {
   if (response.status === 'connected' && response.steamId) {
@@ -50,12 +56,13 @@ function normalizeOwnedGame(game: SteamOwnedGame): UnifiedGame {
   const appId = String(game.appid);
   const cover = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`;
   const hero = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/library_hero.jpg`;
+  const logo = game.img_logo_url ? `${STEAM_COMMUNITY_ASSET_BASE}/${appId}/${game.img_logo_url}.jpg` : undefined;
   return {
     id: `steam:${appId}`,
     title: game.name,
     subtitle: 'Steam library',
     highlight: 'Owned on Steam',
-    artwork: { cover, coverFallback: cover, hero, heroFallback: cover },
+    artwork: { cover, coverFallback: cover, hero, heroFallback: cover, logo },
     providers: [{
       provider: 'steam',
       externalId: appId,
@@ -73,12 +80,16 @@ function isOwnedGame(value: SteamOwnedGame): boolean {
 
 export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
   const client = options.client ?? createSteamClient();
+  const credentials = options.credentials ?? createSteamCredentialClient();
   const now = options.now ?? Date.now;
   const ttlMs = options.libraryTtlMs ?? LIBRARY_TTL_MS;
   const newsLoader = createSteamNewsLoader({ client, cache: options.cache, now });
   let connection: ConnectionState = { status: 'disconnected' };
 
   return {
+    saveCredentials: (input) => credentials.save(input),
+    hasCredentials: () => credentials.has(),
+    clearCredentials: () => credentials.clear(),
     async connect() {
       try {
         connection = mapConnection(await client.connect());

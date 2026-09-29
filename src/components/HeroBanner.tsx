@@ -141,6 +141,8 @@ export default function HeroBanner({
               }}
               alt={display.title}
               draggable={false}
+              loading="eager"
+              decoding="async"
               className="absolute inset-0 h-[112%] w-[112%] object-cover object-[50%_35%]"
             />
           </AnimatePresence>

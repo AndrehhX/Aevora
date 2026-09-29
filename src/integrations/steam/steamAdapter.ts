@@ -2,6 +2,7 @@ import type { CacheStore } from '../cache/cacheStore';
 import type { UnifiedGame } from '../../domain/game';
 import type { SteamAppDetails, SteamClient, SteamConnectionResponse, SteamOwnedGame } from './steamClient';
 import { createSteamClient } from './steamClient';
+import { createSteamNewsLoader, type SteamNewsResult } from './steamNews';
 
 export type ConnectionState =
   | { status: 'disconnected' }
@@ -22,6 +23,7 @@ export interface SteamAdapter {
   disconnect(): Promise<void>;
   getLibrary(): Promise<UnifiedGame[]>;
   getAppDetails(appId: number): Promise<SteamAppDetails>;
+  getNews(appId: number): Promise<SteamNewsResult>;
   getConnection(): ConnectionState;
 }
 
@@ -73,6 +75,7 @@ export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
   const client = options.client ?? createSteamClient();
   const now = options.now ?? Date.now;
   const ttlMs = options.libraryTtlMs ?? LIBRARY_TTL_MS;
+  const newsLoader = createSteamNewsLoader({ client, cache: options.cache, now });
   let connection: ConnectionState = { status: 'disconnected' };
 
   return {
@@ -112,6 +115,13 @@ export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
         return await client.getAppDetails(appId);
       } catch {
         throw new SteamAdapterError('offline', 'Steam game details are unavailable right now.');
+      }
+    },
+    async getNews(appId) {
+      try {
+        return await newsLoader.load(appId);
+      } catch {
+        throw new SteamAdapterError('offline', 'Steam news is unavailable right now.');
       }
     },
     getConnection: () => connection,

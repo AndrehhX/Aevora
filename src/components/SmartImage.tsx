@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export function SmartImage({
   src,
@@ -6,19 +6,28 @@ export function SmartImage({
   alt,
   className,
   style,
+  loading = 'lazy',
 }: {
   src: string;
   fallback: string;
   alt: string;
   className?: string;
   style?: React.CSSProperties;
+  loading?: 'eager' | 'lazy';
 }) {
-  const [err, setErr] = useState(false);
+  const [failed, setFailed] = useState<'primary' | 'fallback' | 'placeholder'>('primary');
   const [loaded, setLoaded] = useState(false);
-  if (!src) {
+  useEffect(() => {
+    setFailed(src ? 'primary' : fallback ? 'fallback' : 'placeholder');
+    setLoaded(false);
+  }, [src, fallback]);
+
+  if (failed === 'placeholder' || (!src && !fallback)) {
     return (
       <div
         className={className}
+        role="img"
+        aria-label={alt}
         style={{
           ...style,
           background: 'linear-gradient(135deg,#4A3560 0%,#8263A1 50%,#17101F 100%)',
@@ -27,19 +36,22 @@ export function SmartImage({
           justifyContent: 'center',
           fontWeight: 800,
           fontSize: '1.1em',
-          color: 'white',
+          color: 'rgba(241,234,248,0.82)',
         }}
       >
-        P
+        {alt.trim().charAt(0).toUpperCase() || '?'}
       </div>
     );
   }
+  const activeSrc = failed === 'fallback' ? fallback : src;
   return (
     <img
-      src={err || !src ? fallback : src}
+      src={activeSrc}
       alt={alt}
       draggable={false}
-      onError={() => setErr(true)}
+      loading={loading}
+      decoding="async"
+      onError={() => setFailed(failed === 'primary' && fallback && fallback !== src ? 'fallback' : 'placeholder')}
       onLoad={() => setLoaded(true)}
       className={className}
       style={{ ...style, opacity: loaded ? 1 : 0, transition: 'opacity 400ms ease' }}

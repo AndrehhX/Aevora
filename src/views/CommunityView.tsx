@@ -1,9 +1,24 @@
 import { motion } from 'framer-motion';
-import { communityFeed, type CommunityItem } from '../data/mock';
+import type { CommunityItem } from '../data/mock';
+import type { SteamNewsItem } from '../integrations/steam/steamNews';
 import { EASE } from '../motion/presets';
 import { SmartImage } from '../components/SmartImage';
 
-export default function CommunityView({ onPreview }: { onPreview: (item: CommunityItem) => void }) {
+function asCommunityItem(news: SteamNewsItem): CommunityItem {
+  return {
+    id: `steam-news:${news.id}`,
+    text: news.contents || news.title,
+    headline: news.title,
+    excerpt: news.contents || 'Open the source to read the full Steam update.',
+    time: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(news.publishedAt)),
+    source: news.stale ? `${news.feedLabel ?? 'Steam News'} · cached` : news.feedLabel ?? 'Steam News',
+    thumb: '',
+    fallback: '',
+  };
+}
+
+export default function CommunityView({ news = [], onPreview }: { news?: SteamNewsItem[]; onPreview: (item: CommunityItem) => void }) {
+  const feed = news.map(asCommunityItem);
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -12,7 +27,12 @@ export default function CommunityView({ onPreview }: { onPreview: (item: Communi
       className="flex flex-col gap-2.5"
     >
       <h3 className="px-0.5 text-[12.5px] font-semibold text-[#F1EAF8]/90">Activity Feed</h3>
-      {communityFeed.map((c, i) => (
+      {feed.length === 0 && (
+        <div className="rounded-[14px] border border-dashed border-[rgba(217,198,234,0.14)] px-4 py-6 text-[11.5px] leading-relaxed text-[#BEA0D8]/65">
+          Connect Steam to load current game news. No sample stories are shown here.
+        </div>
+      )}
+      {feed.map((c, i) => (
         <motion.button
           key={c.id}
           type="button"

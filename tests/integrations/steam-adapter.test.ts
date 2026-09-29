@@ -16,6 +16,7 @@ function clientWith(overrides: Partial<SteamClient> = {}): SteamClient {
     connect: async (): Promise<SteamConnectionResponse> => ({ status: 'connected', steamId: '76561198000000000', displayName: 'Andreh' }),
     getOwnedGames: async () => [ownedGame],
     getAppDetails: async () => ({ appid: 570, name: 'Dota 2', type: 'game', is_free: true }),
+    getNews: async () => ({ appnews: { newsitems: [] } }),
     disconnect: async () => undefined,
     ...overrides,
   };

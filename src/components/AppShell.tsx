@@ -22,11 +22,12 @@ import { providerName } from '../domain/provider';
 import type { UnifiedGame } from '../domain/game';
 import { DEFAULT_STATE, loadState, saveState, type PersistedPrefs } from '../domain/storage';
 import { EASE } from '../motion/presets';
-import { carouselIds, getLibraryGame, libraryGames } from '../data/library';
+import { carouselIds, getLibraryGame, libraryGames, setLibraryGames } from '../data/library';
 import type { CommunityItem } from '../data/mock';
 import { communityItems, navItems } from '../data/mock';
 import { createLocalCacheStore } from '../integrations/cache/cacheStore';
 import { createSteamAdapter, SteamAdapterError, type ConnectionState } from '../integrations/steam/steamAdapter';
+import type { SteamNewsItem } from '../integrations/steam/steamNews';
 
 type Overlay =
   | { type: 'game'; id: string }
@@ -65,6 +66,7 @@ export default function AppShell() {
   const [toast, setToast] = useState<ToastData | null>(null);
   const steamAdapter = useMemo(() => createSteamAdapter({ cache: createLocalCacheStore() }), []);
   const [steamConnection, setSteamConnection] = useState<ConnectionState>({ status: 'disconnected' });
+  const [steamNews, setSteamNews] = useState<SteamNewsItem[]>([]);
 
   const notify = useCallback((msg: string) => {
     setToast({ id: Date.now(), msg });
@@ -74,7 +76,22 @@ export default function AppShell() {
     try {
       const connection = await steamAdapter.connect();
       setSteamConnection(connection);
-      notify(connection.status === 'connected' ? `Connected to Steam${connection.displayName ? ` as ${connection.displayName}` : ''}.` : 'Steam connection canceled.');
+      if (connection.status === 'connected') {
+        const games = await steamAdapter.getLibrary();
+        setLibraryGames(games);
+        const firstGame = games[0];
+        if (firstGame) {
+          setSelectedId(firstGame.id);
+          const steamId = firstGame.providers.find((entry) => entry.provider === 'steam')?.externalId;
+          if (steamId) {
+            const news = await steamAdapter.getNews(Number(steamId));
+            setSteamNews(news.items);
+          }
+        }
+        notify(`Connected to Steam${connection.displayName ? ` as ${connection.displayName}` : ''}.`);
+      } else {
+        notify('Steam connection canceled.');
+      }
     } catch (error) {
       notify(error instanceof SteamAdapterError ? error.message : 'Steam connection is unavailable.');
     }
@@ -84,6 +101,8 @@ export default function AppShell() {
     try {
       await steamAdapter.disconnect();
       setSteamConnection({ status: 'disconnected' });
+      setLibraryGames([]);
+      setSteamNews([]);
       notify('Steam disconnected.');
     } catch {
       notify('Steam could not be disconnected.');
@@ -254,7 +273,7 @@ export default function AppShell() {
                   <StoreView selectedId={selectedId} onSelect={selectGame} onInspect={(id) => openOverlay({ type: 'game', id })} />
                 )}
                 {activeNav === 'Community' && (
-                  <CommunityView onPreview={(item) => openOverlay({ type: 'community', item })} />
+                  <CommunityView news={steamNews} onPreview={(item) => openOverlay({ type: 'community', item })} />
                 )}
                 {activeNav === 'Indies' && <IndiesView selectedId={selectedId} onSelect={selectGame} />}
                 {activeNav === 'Early2025' && <EarlyView selectedId={selectedId} onSelect={selectGame} />}

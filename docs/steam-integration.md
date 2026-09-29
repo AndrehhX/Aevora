@@ -8,19 +8,19 @@ Owned games are different. Steam's `IPlayerService/GetOwnedGames` endpoint requi
 
 ## Local configuration
 
-Copy `.env.example` only for local native development. Real values must stay outside Git and outside frontend bundles. A production implementation should read the key from a platform credential store and keep only the minimum session material required to refresh the local provider state.
+The desktop Settings panel accepts a SteamID64 or Steam vanity identifier and a Steam Web API key. The key is masked in the form, sent only to the local `steam_save_credentials` command, and stored in Windows Credential Manager under the Nexux launcher service. It is not written to `localStorage`, the repository, `.env`, or the frontend bundle.
 
-The current desktop shell includes the typed command boundary and real Steam launch commands. The account-linking command is intentionally not reported as complete until its OpenID callback and secure credential storage are implemented and manually verified. Until then the UI must show the unavailable/offline state rather than a fake connected account.
+Nexux deliberately does not ask for a Steam password. The current supported path is API-key plus SteamID/vanity resolution; browser preview reports that a desktop runtime is required. A future OpenID flow may remove the manual identifier step, but it is not claimed as implemented here.
 
 ## Expected flow
 
-1. User opens Settings and chooses Connect Steam.
-2. The native layer starts an OpenID flow; Aevora never asks for or sees the Steam password.
-3. The callback validates the returned Steam identity.
+1. User opens Settings and saves a SteamID64/vanity identifier plus API key.
+2. Windows Credential Manager stores the local credential record.
+3. The native layer resolves the identifier and validates the Steam account summary.
 4. The native layer retrieves the owned library through the protected Web API request.
 5. The adapter normalizes records into `UnifiedGame[]` and caches them with a TTL.
-6. Artwork and public news are loaded by AppID. News keeps its source link.
-7. Disconnect clears the local provider cache and session state.
+6. Artwork/logos come from Steam-owned hashes or Store API details; public news keeps its source link.
+7. Disconnect clears the local provider cache and session state. Clearing local setup also deletes the Credential Manager record.
 
 ## Failure states
 
@@ -30,6 +30,7 @@ The current desktop shell includes the typed command boundary and real Steam lau
 - `offline`: no live request succeeded and no usable cache exists.
 - `missing-client`: the desktop runtime or Steam client is not available.
 - `unsupported`: the record has no valid Steam AppID or the provider is not implemented.
+- `private-profile`: Steam did not expose owned-game details for the configured profile.
 
 ## References
 

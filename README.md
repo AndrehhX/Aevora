@@ -1,6 +1,6 @@
-# Aevora
+# Nexux
 
-Aevora is a desktop-first game launcher built around one unified library. The interface is React and TypeScript; the native boundary is Tauri and Rust. The current product is intentionally honest about provider state: without a connected provider, the library stays empty instead of showing invented games.
+Nexux is a desktop-first game launcher built around one unified library. `Aevora` remains the current in-app label. The interface is React and TypeScript; the native boundary is Tauri and Rust. Without a connected provider, the library stays empty instead of showing invented games.
 
 ## Stack
 
@@ -58,9 +58,11 @@ Generated Rust output under `src-tauri/target` and generated Tauri schemas under
 
 ## Steam state
 
-The frontend never asks for a Steam password and never embeds a secret. The adapter has explicit states for connected, canceled, expired, rate-limited, offline and unavailable desktop runtime. Steam launch and store actions go through typed Tauri commands; the UI only reports `Playing` after the native command reports success.
+The frontend never asks for a Steam password and never embeds a secret. From the desktop Settings panel, each user can enter a SteamID64 or vanity identifier plus their own Steam Web API key. The key is sent once to the local Tauri command and stored in Windows Credential Manager; all later Steam requests read it from there. Browser preview disables this form because it cannot provide the same local boundary.
 
-Library authentication and owned-game retrieval still require the native Steam account configuration described in [`docs/steam-integration.md`](docs/steam-integration.md). Until that boundary is configured, Aevora shows the connection state and an empty-library state.
+The native adapter resolves the account, validates the profile, loads owned games through `IPlayerService/GetOwnedGames`, reads public app details for artwork and logos, and loads current news through `ISteamNews/GetNewsForApp`. Steam launch and store actions go through typed Tauri commands; the UI only reports `Playing` after the native command reports success. Private profiles and unavailable APIs are reported honestly.
+
+For local setup, create a Steam Web API key at [Steam Web API Key](https://steamcommunity.com/dev/apikey), open the desktop Settings panel, save the SteamID/vanity identifier and key, then choose Connect. Never commit the key, put it in a `VITE_*` variable, or paste it into an issue.
 
 ## Repository map
 
@@ -81,14 +83,16 @@ docs/                        architecture and provider notes
 - [x] Provider and cache failures are represented without fake success.
 - [x] Steam artwork/news normalizers have offline coverage.
 - [x] Steam launch and store commands are distinct.
+- [x] Steam credentials use Windows Credential Manager instead of browser storage.
+- [x] Owned games, Steam artwork/logos and public news use live provider responses.
 - [x] Keyboard Escape, focus, reduced-motion and coarse-pointer behavior are tested.
 - [x] `npm run check` passes.
 - [x] `cargo check --manifest-path src-tauri/Cargo.toml` passes on Windows.
-- [ ] Configure and manually verify Steam account linking with a real account.
+- [ ] Manually verify Steam account linking with a real account and a profile that exposes game details.
 - [ ] Run a packaged `npm run tauri:build` smoke test on the target Windows machine.
 
 ## Known limitations
 
 Aevora does not claim to support Epic, GOG or other providers yet. It also does not invent install progress, cloud saves, friend activity or account data. Those surfaces remain unavailable until their provider adapters exist.
 
-The current repository has no configured Git remote, so releases are local until a remote and publication workflow are intentionally added.
+Steam's API key route requires a visible profile for owned-game data. If a profile is private, the launcher will keep the library unavailable instead of filling it with demo records.

@@ -5,6 +5,7 @@ const SERVICE: &str = "nexux-launcher";
 const ACCOUNT: &str = "steam-credentials";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SteamCredentials {
     pub account: String,
     pub api_key: String,
@@ -67,6 +68,7 @@ pub fn steam_clear_credentials() -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::{validate_credentials, SteamCredentials};
+    use keyring::Entry;
 
     #[test]
     fn rejects_blank_account_or_api_key() {
@@ -91,5 +93,28 @@ mod tests {
         .unwrap();
         assert_eq!(credentials.account, "andreh");
         assert_eq!(credentials.api_key, "key");
+    }
+
+    #[test]
+    fn accepts_tauri_camel_case_credentials() {
+        let credentials: SteamCredentials =
+            serde_json::from_str(r#"{"account":"andreh","apiKey":"key"}"#).unwrap();
+        assert_eq!(credentials.account, "andreh");
+        assert_eq!(credentials.api_key, "key");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_credential_manager_round_trips_a_local_record() {
+        let entry = Entry::new("nexux-launcher-test", "steam-credentials")
+            .expect("Windows Credential Manager entry should be constructible");
+        let result = (|| {
+            entry
+                .set_password("temporary-test-record")
+                .expect("Windows Credential Manager should accept a local record");
+            assert_eq!(entry.get_password().unwrap(), "temporary-test-record");
+        })();
+        let _ = entry.delete_credential();
+        result
     }
 }

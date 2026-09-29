@@ -73,13 +73,7 @@ export default function TopNavigation({
                 className="group relative pb-1 text-[12.5px] font-medium"
               >
                 <span className={`transition-colors ${active ? 'text-[#BEA0D8]' : 'text-[#D9C6EA]/60 group-hover:text-[#F1EAF8]'}`}>
-                  {item === 'Early2025' ? (
-                    <span>
-                      <span className="text-[#BEA0D8]">E</span>arly2025
-                    </span>
-                  ) : (
-                    item
-                  )}
+                  {item}
                 </span>
                 {active && (
                   <motion.span

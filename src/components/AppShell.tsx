@@ -299,7 +299,7 @@ export default function AppShell() {
                   <CommunityView news={steamNews} onPreview={(item) => openOverlay({ type: 'community', item })} />
                 )}
                 {activeNav === 'Indies' && <IndiesView selectedId={selectedId} onSelect={selectGame} />}
-                {activeNav === 'Early2025' && <EarlyView selectedId={selectedId} onSelect={selectGame} />}
+                {activeNav === 'Release' && <EarlyView selectedId={selectedId} onSelect={selectGame} />}
               </motion.div>
             </AnimatePresence>
           </div>

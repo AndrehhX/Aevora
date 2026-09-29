@@ -49,7 +49,7 @@ export function IndiesView({ selectedId, onSelect }: { selectedId: string; onSel
 export function EarlyView({ selectedId, onSelect }: { selectedId: string; onSelect: (id: string) => void }) {
   return (
     <Collection
-      title="Early2025"
+      title="Release"
       subtitle="New and upcoming releases on Aevora."
       games={byIds(earlyIds)}
       selectedId={selectedId}

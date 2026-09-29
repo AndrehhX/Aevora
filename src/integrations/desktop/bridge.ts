@@ -16,7 +16,11 @@ type TauriRuntime = {
 
 function tauriRuntime(): TauriRuntime | undefined {
   if (typeof window === 'undefined') return undefined;
-  return (window as Window & { __TAURI__?: { core?: TauriRuntime } }).__TAURI__?.core;
+  const globalWindow = window as Window & {
+    __TAURI_INTERNALS__?: TauriRuntime;
+    __TAURI__?: { core?: TauriRuntime };
+  };
+  return globalWindow.__TAURI_INTERNALS__ ?? globalWindow.__TAURI__?.core;
 }
 
 export function getDesktopBridge(): DesktopBridge {

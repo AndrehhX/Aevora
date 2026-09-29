@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import Modal from './Modal';
 import Toggle from './Toggle';
 import { DEFAULT_STATE, type PersistedPrefs as Prefs } from '../domain/storage';
+import type { ConnectionState } from '../integrations/steam/steamAdapter';
+import ProviderConnectPanel from './ProviderConnectPanel';
 
 export const DEFAULT_PREFS = DEFAULT_STATE.prefs;
 export type { PersistedPrefs as Prefs } from '../domain/storage';
@@ -32,11 +34,17 @@ export default function SettingsPanel({
   prefs,
   onChange,
   onClose,
+  steamConnection = { status: 'disconnected' },
+  onSteamConnect = () => undefined,
+  onSteamDisconnect = () => undefined,
 }: {
   open: boolean;
   prefs: Prefs;
   onChange: (p: Prefs) => void;
   onClose: () => void;
+  steamConnection?: ConnectionState;
+  onSteamConnect?: () => Promise<void> | void;
+  onSteamDisconnect?: () => Promise<void> | void;
 }) {
   const set = <K extends keyof Prefs>(k: K, v: Prefs[K]) => onChange({ ...prefs, [k]: v });
 
@@ -50,6 +58,10 @@ export default function SettingsPanel({
         <Section title="General">
           <Row label="Start on Home" hint="Always open the launcher on the Home section." control={<Toggle checked={prefs.startOnHome} onChange={(v) => set('startOnHome', v)} label="Start on Home" />} />
           <Row label="Remember last game" hint="Restore the previously selected game on launch." control={<Toggle checked={prefs.rememberGame} onChange={(v) => set('rememberGame', v)} label="Remember last selected game" />} />
+        </Section>
+
+        <Section title="Providers">
+          <ProviderConnectPanel connection={steamConnection} onConnect={onSteamConnect} onDisconnect={onSteamDisconnect} />
         </Section>
 
         <Section title="Appearance">

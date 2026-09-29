@@ -25,6 +25,8 @@ import { EASE } from '../motion/presets';
 import { carouselIds, getLibraryGame, libraryGames } from '../data/library';
 import type { CommunityItem } from '../data/mock';
 import { communityItems, navItems } from '../data/mock';
+import { createLocalCacheStore } from '../integrations/cache/cacheStore';
+import { createSteamAdapter, SteamAdapterError, type ConnectionState } from '../integrations/steam/steamAdapter';
 
 type Overlay =
   | { type: 'game'; id: string }
@@ -61,10 +63,32 @@ export default function AppShell() {
   );
   const [overlay, setOverlay] = useState<Overlay | null>(null);
   const [toast, setToast] = useState<ToastData | null>(null);
+  const steamAdapter = useMemo(() => createSteamAdapter({ cache: createLocalCacheStore() }), []);
+  const [steamConnection, setSteamConnection] = useState<ConnectionState>({ status: 'disconnected' });
 
   const notify = useCallback((msg: string) => {
     setToast({ id: Date.now(), msg });
   }, []);
+
+  const connectSteam = useCallback(async () => {
+    try {
+      const connection = await steamAdapter.connect();
+      setSteamConnection(connection);
+      notify(connection.status === 'connected' ? `Connected to Steam${connection.displayName ? ` as ${connection.displayName}` : ''}.` : 'Steam connection canceled.');
+    } catch (error) {
+      notify(error instanceof SteamAdapterError ? error.message : 'Steam connection is unavailable.');
+    }
+  }, [notify, steamAdapter]);
+
+  const disconnectSteam = useCallback(async () => {
+    try {
+      await steamAdapter.disconnect();
+      setSteamConnection({ status: 'disconnected' });
+      notify('Steam disconnected.');
+    } catch {
+      notify('Steam could not be disconnected.');
+    }
+  }, [notify, steamAdapter]);
 
   const selectGame = useCallback(
     (id: string) => {
@@ -266,6 +290,9 @@ export default function AppShell() {
         prefs={prefs}
         onChange={(p) => setStore((s) => ({ ...s, prefs: { ...DEFAULT_STATE.prefs, ...p } }))}
         onClose={() => setOverlay(null)}
+        steamConnection={steamConnection}
+        onSteamConnect={connectSteam}
+        onSteamDisconnect={disconnectSteam}
       />
       <ProfilePanel
         open={overlay?.type === 'profile'}

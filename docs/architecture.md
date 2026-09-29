@@ -1,76 +1,48 @@
-# Aevora Architecture — Unified Game Library
+# Aevora architecture
 
-This document describes the frontend domain model that prepares Aevora for
-real provider integrations (Tauri, Steam, Epic, GOG, …). Everything below is
-mock data shaped like future normalized provider output. No real providers,
-filesystem access, or executables are involved yet.
+Aevora separates presentation from provider access. React renders canonical `UnifiedGame` records; Tauri/Rust owns native operations and future secret storage. A provider can be unavailable without making the UI pretend that its data exists.
 
-## Core idea
-
-**One game, multiple providers.** Aevora displays one entry per game.
-Ownership and installation live *inside* the game under `providers` —
-never as separate per-provider UI models.
-
-```
-Steam Adapter ──┐
-Epic Adapter ───┤
-GOG Adapter ────┤   (future — not implemented)
-                ▼
-      NORMALIZATION LAYER   ← mock data in src/data/library.ts
-                │             already behaves like this output
-                ▼
-          UnifiedGame[]
-                │
-                ▼
-          AEVORA LIBRARY    ← selectors in src/domain/library.ts
-                │
-                ▼
-             REACT UI       ← consumes UnifiedGame only
+```text
+Steam transport / native commands
+              |
+       Steam adapter
+              |
+      UnifiedGame records
+              |
+       library selectors
+              |
+          React UI
 ```
 
-## Domain layer (`src/domain/`)
+## Frontend boundaries
 
-- `provider.ts` — `ProviderId` (`steam | epic | gog | ea | ubisoft | xbox
-  | battle-net | riot | local`), `GameProviderEntry` (externalId, owned,
-  installed, playtimeMinutes, lastPlayed, …), `providerDefinitions`
-  (central display names — never scattered through components).
-- `game.ts` — `UnifiedGame`: canonical `id`, title/display strings,
-  `artwork` (cover/hero + transparent `logo`), `branding` hints,
-  `providers[]`, `metadata` (developer/publisher/release/genres), ambient.
-- `library.ts` — all derived state, in one place:
-  `isOwned`, `isInstalled`, `getOwnedProviders`, `getInstalledProviders`,
-  `getPreferredProvider` (explicit preference wins when still installed,
-  else fallback), `getTotalPlaytimeMinutes` (sums providers),
-  `getLastPlayed` (most recent valid timestamp incl. session override),
-  `formatPlaytime` (`45m`, `1h 30m`, `97h`), `formatLastPlayed`
-  (`Today`, `Yesterday`, `3 days ago`, `Sep 14`, `Never`),
-  plus `getInstalledGames`, `getOwnedGames`, `getFavoriteGames`,
-  `getRecentlyPlayedGames` (sorted desc), `getGamesByProvider`,
-  `searchGames` (title/developer/publisher/genre/provider).
-- `storage.ts` — versioned (`aevora:state:v1`) persistence for favorites,
-  preferredProviders, lastSelectedGame, lastNav, prefs, playHistory.
-  Defensive parsing, safe defaults, one-time migration from the legacy
-  per-key prototype keys.
+- `src/domain/game.ts` defines the canonical game shape.
+- `src/domain/provider.ts` defines provider identities and provider-owned fields.
+- `src/domain/library.ts` contains ownership, installation, search and playtime selectors.
+- `src/domain/storage.ts` persists preferences and local play history in a versioned record.
+- `src/data/library.ts` starts empty in production. Provider adapters populate it after a real connection.
+- `src/data/fixtures/` is isolated from production data and is not imported by the application shell.
 
-## Identity rules
+## Integration boundaries
 
-- Aevora canonical ids (`cyberpunk`, `elden`, …) are stable UI keys.
-  Provider `externalId`s (Steam AppIDs, …) are never used as keys.
-- Favorites, preferred providers, and play history are keyed by canonical
-  id and stored *outside* the immutable mock provider data.
-- Session plays update `playHistory` (timestamp), which overrides stale
-  mock `lastPlayed` values via `getLastPlayed`.
+- `src/integrations/desktop/bridge.ts` is the only frontend entry point for native commands.
+- `src/integrations/cache/cacheStore.ts` provides TTL and stale metadata for offline recovery.
+- `src/integrations/steam/steamClient.ts` describes typed native calls.
+- `src/integrations/steam/steamAdapter.ts` maps provider responses to the canonical domain model.
+- `src/integrations/steam/steamAssets.ts` resolves Steam artwork with deterministic fallbacks.
+- `src/integrations/steam/steamNews.ts` filters malformed news and preserves source URLs.
+- `src/integrations/steam/steamLaunch.ts` maps native launch results to `started`, `missing-client`, `unsupported` or `failed`.
 
-## UI contracts
+## Native boundary
 
-- Hero prefers `artwork.logo` (`object-fit: contain`); falls back to a
-  styled title. Logos preload with the hero — never text-flash.
-- Game Details derives everything (Owned on, playtime, last played,
-  PLAY vs INSTALL) from selectors. PLAY auto-uses a single installed
-  provider; multiple installed/owned providers open the provider selector
-  ("Remember my choice" persists the preference).
-- Ready To Play derives from `getInstalledGames` — no separate list.
-- Search operates over `UnifiedGame` with working filters
-  (All/Installed/Favorites/Steam/Epic/GOG/EA).
-- Store catalog (`storeFeaturedIds`, `storeDealIds`, …) is id lists only;
-  ownership always resolves from the library.
+`src-tauri/src/commands/launch.rs` is deliberately small. It receives a validated Steam AppID and opens either `steam://rungameid/<appid>` or `steam://store/<appid>`. React never executes a shell command directly.
+
+Account linking, owned-game retrieval and secret storage must remain native. The frontend must not contain a Steam Web API key, a Steam password or a refresh token. See [`steam-integration.md`](steam-integration.md).
+
+## State rules
+
+1. No provider connection means no production games.
+2. A stale cache may be displayed as stale, never as fresh.
+3. Launch feedback comes from the native command, not from a timer.
+4. Public news keeps its original source URL.
+5. Decorative motion disappears for reduced-motion and coarse-pointer users.

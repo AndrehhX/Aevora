@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { CommunityItem } from '../data/mock';
+import type { CommunityItem } from '../data/navigation';
 import type { SteamNewsItem } from '../integrations/steam/steamNews';
 import { EASE } from '../motion/presets';
 import { SmartImage } from '../components/SmartImage';

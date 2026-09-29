@@ -23,8 +23,8 @@ import type { UnifiedGame } from '../domain/game';
 import { DEFAULT_STATE, loadState, saveState, type PersistedPrefs } from '../domain/storage';
 import { EASE } from '../motion/presets';
 import { carouselIds, getLibraryGame, libraryGames, setLibraryGames } from '../data/library';
-import type { CommunityItem } from '../data/mock';
-import { communityItems, navItems } from '../data/mock';
+import type { CommunityItem } from '../data/navigation';
+import { navItems } from '../data/navigation';
 import { createLocalCacheStore } from '../integrations/cache/cacheStore';
 import { createSteamAdapter, SteamAdapterError, type ConnectionState } from '../integrations/steam/steamAdapter';
 import type { SteamNewsItem } from '../integrations/steam/steamNews';
@@ -48,7 +48,7 @@ const BACKGROUNDS: Record<PersistedPrefs['theme'], string> = {
 const VALID_NAV = new Set(navItems);
 
 export default function AppShell() {
-  // Centralized prototype state — one versioned blob, safe defaults.
+  // Centralized persisted state — one versioned blob, safe defaults.
   const [store, setStore] = useState(loadState);
   useEffect(() => saveState(store), [store]);
 
@@ -332,7 +332,7 @@ export default function AppShell() {
         onClose={() => setOverlay(null)}
       />
       <CommunityPreview
-        item={overlay?.type === 'community' ? overlay.item : communityItems[0]}
+        item={overlay?.type === 'community' ? overlay.item : null}
         open={overlay?.type === 'community'}
         onClose={() => setOverlay(null)}
       />
@@ -340,7 +340,8 @@ export default function AppShell() {
         open={overlay?.type === 'signout'}
         onConfirm={() => {
           setOverlay(null);
-          notify('Signed out (prototype mode)');
+          void disconnectSteam();
+          notify('Local Steam session cleared.');
         }}
         onClose={() => setOverlay(null)}
       />

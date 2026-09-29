@@ -1,6 +1,6 @@
 import type { ProviderId } from './provider';
 
-// Tiny versioned storage abstraction. All prototype user state flows
+// Tiny versioned storage abstraction. All local user state flows
 // through here — no scattered localStorage calls in components.
 
 const KEY = 'aevora:state:v1';
@@ -24,7 +24,7 @@ export interface PersistedState {
   lastSelectedGame: string;
   lastNav: string;
   prefs: PersistedPrefs;
-  /** session play history: game id -> timestamp (overrides mock dates) */
+  /** session play history: game id -> timestamp */
   playHistory: Record<string, number>;
 }
 
@@ -64,7 +64,7 @@ function asStringArray(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
 }
 
-/** One-time migration from the previous per-key prototype storage. */
+/** One-time migration from the previous per-key storage. */
 function migrateLegacy(): Partial<PersistedState> {
   try {
     const prefs = asRecord(safeParse(localStorage.getItem('aevora:prefs')));

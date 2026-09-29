@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { UnifiedGame } from '../domain/game';
-import { navItems } from '../data/mock';
+import { navItems } from '../data/navigation';
 import GlobalSearch from './GlobalSearch';
 import ProfileDropdown, { type ProfileAction } from './ProfileDropdown';
 import SocialPanel from './SocialPanel';

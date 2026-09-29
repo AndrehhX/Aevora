@@ -17,7 +17,7 @@ export default function SignOutDialog({
           Sign out?
         </h2>
         <p className="mt-1.5 text-[12px] leading-relaxed text-[#D9C6EA]/75">
-          This is a prototype account. Signing out only simulates the flow — nothing is deleted.
+          This clears the local Steam session state. Your Steam account and installed games are not affected.
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <motion.button

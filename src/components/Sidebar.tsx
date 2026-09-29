@@ -5,7 +5,7 @@ import InstalledGameList from './InstalledGameList';
 import CommunityPanel from './CommunityPanel';
 import Tooltip from './Tooltip';
 import type { UnifiedGame } from '../domain/game';
-import type { CommunityItem } from '../data/mock';
+import type { CommunityItem } from '../data/navigation';
 
 export default function Sidebar({
   libraryQuery,

@@ -1,4 +1,4 @@
-import type { CommunityItem } from '../data/mock';
+import type { CommunityItem } from '../data/navigation';
 import Modal from './Modal';
 import { SmartImage } from './SmartImage';
 

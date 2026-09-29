@@ -41,4 +41,18 @@ describe('Steam setup panel', () => {
     expect(screen.getByText('Open the Tauri desktop app to configure Steam locally.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save Steam setup' })).toHaveProperty('disabled', true);
   });
+
+  it('keeps a connection error visible inside the settings panel', () => {
+    render(
+      <ProviderConnectPanel
+        connection={{ status: 'disconnected' }}
+        connectionMessage="Steam API key rejected."
+        onConnect={vi.fn()}
+        onDisconnect={vi.fn()}
+        nativeAvailable
+      />
+    );
+
+    expect(screen.getByText('Steam API key rejected.')).toBeTruthy();
+  });
 });

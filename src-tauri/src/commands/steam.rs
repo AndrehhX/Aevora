@@ -3,9 +3,11 @@ use reqwest::Client;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::time::Duration;
 
 const STEAM_API: &str = "https://api.steampowered.com";
 const STEAM_STORE_API: &str = "https://store.steampowered.com/api/appdetails";
+const STEAM_REQUEST_TIMEOUT_SECS: u64 = 20;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SteamOwnedGame {
@@ -147,6 +149,8 @@ struct SteamPlayerSummary {
 fn new_client() -> Result<Client, String> {
     Client::builder()
         .user_agent("Nexux/0.1.0")
+        .connect_timeout(Duration::from_secs(8))
+        .timeout(Duration::from_secs(STEAM_REQUEST_TIMEOUT_SECS))
         .build()
         .map_err(|_| "Could not prepare the Steam connection.".to_string())
 }

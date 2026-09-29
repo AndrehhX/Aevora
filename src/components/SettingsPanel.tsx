@@ -41,6 +41,7 @@ export default function SettingsPanel({
   onSteamSaveCredentials = () => undefined,
   onSteamClearCredentials = () => undefined,
   steamNativeAvailable = true,
+  steamConnectionMessage,
 }: {
   open: boolean;
   prefs: Prefs;
@@ -52,6 +53,7 @@ export default function SettingsPanel({
   onSteamSaveCredentials?: (credentials: SteamCredentialsInput) => Promise<void> | void;
   onSteamClearCredentials?: () => Promise<void> | void;
   steamNativeAvailable?: boolean;
+  steamConnectionMessage?: string | null;
 }) {
   const set = <K extends keyof Prefs>(k: K, v: Prefs[K]) => onChange({ ...prefs, [k]: v });
 
@@ -75,6 +77,7 @@ export default function SettingsPanel({
             onSaveCredentials={onSteamSaveCredentials}
             onClearCredentials={onSteamClearCredentials}
             nativeAvailable={steamNativeAvailable}
+            connectionMessage={steamConnectionMessage}
           />
         </Section>
 

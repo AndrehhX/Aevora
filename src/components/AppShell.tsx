@@ -69,6 +69,7 @@ export default function AppShell() {
   const [toast, setToast] = useState<ToastData | null>(null);
   const steamAdapter = useMemo(() => createSteamAdapter({ cache: createLocalCacheStore() }), []);
   const [steamConnection, setSteamConnection] = useState<ConnectionState>({ status: 'disconnected' });
+  const [steamConnectionMessage, setSteamConnectionMessage] = useState<string | null>(null);
   const [activeLibrary, setActiveLibrary] = useState<UnifiedGame[]>(() => libraryGames);
   const [steamNews, setSteamNews] = useState<SteamNewsItem[]>([]);
   const nativeAvailable = useMemo(() => getDesktopBridge().isNative, []);
@@ -78,28 +79,51 @@ export default function AppShell() {
   }, []);
 
   const connectSteam = useCallback(async () => {
+    setSteamConnectionMessage('Connecting to Steam…');
     try {
       const connection = await steamAdapter.connect();
       setSteamConnection(connection);
       if (connection.status === 'connected') {
-        const games = await steamAdapter.getLibrary();
+        let games: UnifiedGame[];
+        try {
+          games = await steamAdapter.getLibrary();
+        } catch (error) {
+          const message = error instanceof SteamAdapterError ? error.message : 'Steam library could not be loaded.';
+          setSteamConnectionMessage(message);
+          notify(message);
+          return;
+        }
         setLibraryGames(games);
         setActiveLibrary(games);
         const firstGame = games[0];
+        let newsMessage: string | null = null;
         if (firstGame) {
           setSelectedId(firstGame.id);
           const steamId = firstGame.providers.find((entry) => entry.provider === 'steam')?.externalId;
           if (steamId) {
-            const news = await steamAdapter.getNews(Number(steamId));
-            setSteamNews(news.items);
+            try {
+              const news = await steamAdapter.getNews(Number(steamId));
+              setSteamNews(news.items);
+            } catch (error) {
+              newsMessage = error instanceof SteamAdapterError ? error.message : 'Steam news could not be loaded.';
+              setSteamNews([]);
+            }
           }
+        } else {
+          newsMessage = 'Steam connected, but no games were returned for this account.';
         }
-        notify(`Connected to Steam${connection.displayName ? ` as ${connection.displayName}` : ''}.`);
+        const connectedMessage = `Connected to Steam${connection.displayName ? ` as ${connection.displayName}` : ''}.${newsMessage ? ` ${newsMessage}` : ''}`;
+        setSteamConnectionMessage(newsMessage);
+        notify(connectedMessage);
       } else {
+        setSteamConnectionMessage('Steam connection was canceled.');
         notify('Steam connection canceled.');
       }
     } catch (error) {
-      notify(error instanceof SteamAdapterError ? error.message : 'Steam connection is unavailable.');
+      const message = error instanceof SteamAdapterError ? error.message : 'Steam connection is unavailable.';
+      setSteamConnection({ status: 'disconnected' });
+      setSteamConnectionMessage(message);
+      notify(message);
     }
   }, [notify, steamAdapter]);
 
@@ -107,6 +131,7 @@ export default function AppShell() {
     try {
       await steamAdapter.disconnect();
       setSteamConnection({ status: 'disconnected' });
+      setSteamConnectionMessage(null);
       setLibraryGames([]);
       setActiveLibrary([]);
       setSteamNews([]);
@@ -344,6 +369,7 @@ export default function AppShell() {
         onSteamSaveCredentials={saveSteamCredentials}
         onSteamClearCredentials={clearSteamCredentials}
         steamNativeAvailable={nativeAvailable}
+        steamConnectionMessage={steamConnectionMessage}
       />
       <ProfilePanel
         open={overlay?.type === 'profile'}

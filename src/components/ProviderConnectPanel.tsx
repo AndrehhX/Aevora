@@ -18,6 +18,7 @@ export default function ProviderConnectPanel({
   onSaveCredentials,
   onClearCredentials,
   nativeAvailable = true,
+  connectionMessage,
 }: {
   connection: ConnectionState;
   onConnect: () => Promise<void> | void;
@@ -25,6 +26,7 @@ export default function ProviderConnectPanel({
   onSaveCredentials?: (credentials: SteamCredentialsInput) => Promise<void> | void;
   onClearCredentials?: () => Promise<void> | void;
   nativeAvailable?: boolean;
+  connectionMessage?: string | null;
 }) {
   const [busy, setBusy] = useState(false);
   const [account, setAccount] = useState('');
@@ -49,7 +51,7 @@ export default function ProviderConnectPanel({
     try {
       await onSaveCredentials({ account, apiKey });
       setApiKey('');
-      setMessage('Saved locally on this PC.');
+      setMessage('Saved locally. Press Connect to load your library.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Steam setup could not be saved.');
     } finally {
@@ -74,6 +76,7 @@ export default function ProviderConnectPanel({
             Steam <span className={`text-[10px] font-normal ${copy.tone}`}>· {copy.label}</span>
           </div>
           <p className="mt-1 max-w-[290px] text-[11px] leading-snug text-[#BEA0D8]/60">{copy.detail}</p>
+          {connectionMessage && <p role="alert" className="mt-1 max-w-[290px] text-[11px] leading-snug text-amber-200/85">{connectionMessage}</p>}
         </div>
         <motion.button
           whileTap={{ scale: 0.96 }}

@@ -22,7 +22,7 @@ import { providerName } from '../domain/provider';
 import type { UnifiedGame } from '../domain/game';
 import { DEFAULT_STATE, loadState, saveState, type PersistedPrefs } from '../domain/storage';
 import { EASE } from '../motion/presets';
-import { carouselIds, getLibraryGame, libraryGames, setLibraryGames } from '../data/library';
+import { carouselIds, libraryGames, setLibraryGames } from '../data/library';
 import type { CommunityItem } from '../data/navigation';
 import { navItems } from '../data/navigation';
 import { createLocalCacheStore } from '../integrations/cache/cacheStore';
@@ -60,7 +60,7 @@ export default function AppShell() {
   const [globalQuery, setGlobalQuery] = useState('');
   // ONE centralized selection — sidebar + carousel + hero + views share it.
   const [selectedId, setSelectedId] = useState(() =>
-    store.prefs.rememberGame && getLibraryGame(store.lastSelectedGame) ? store.lastSelectedGame : 'forza'
+    store.prefs.rememberGame && libraryGames.some((game) => game.id === store.lastSelectedGame) ? store.lastSelectedGame : 'forza'
   );
   const [activeNav, setActiveNav] = useState(() =>
     store.prefs.startOnHome ? 'Home' : VALID_NAV.has(store.lastNav) ? store.lastNav : 'Home'
@@ -69,6 +69,7 @@ export default function AppShell() {
   const [toast, setToast] = useState<ToastData | null>(null);
   const steamAdapter = useMemo(() => createSteamAdapter({ cache: createLocalCacheStore() }), []);
   const [steamConnection, setSteamConnection] = useState<ConnectionState>({ status: 'disconnected' });
+  const [activeLibrary, setActiveLibrary] = useState<UnifiedGame[]>(() => libraryGames);
   const [steamNews, setSteamNews] = useState<SteamNewsItem[]>([]);
   const nativeAvailable = useMemo(() => getDesktopBridge().isNative, []);
 
@@ -83,6 +84,7 @@ export default function AppShell() {
       if (connection.status === 'connected') {
         const games = await steamAdapter.getLibrary();
         setLibraryGames(games);
+        setActiveLibrary(games);
         const firstGame = games[0];
         if (firstGame) {
           setSelectedId(firstGame.id);
@@ -106,6 +108,7 @@ export default function AppShell() {
       await steamAdapter.disconnect();
       setSteamConnection({ status: 'disconnected' });
       setLibraryGames([]);
+      setActiveLibrary([]);
       setSteamNews([]);
       notify('Steam disconnected.');
     } catch {
@@ -126,11 +129,11 @@ export default function AppShell() {
 
   const selectGame = useCallback(
     (id: string) => {
-      if (!getLibraryGame(id)) return;
+      if (!activeLibrary.some((game) => game.id === id)) return;
       setSelectedId(id);
       setStore((s) => (s.prefs.rememberGame ? { ...s, lastSelectedGame: id } : s));
     },
-    []
+    [activeLibrary]
   );
 
   const changeNav = useCallback((nav: string) => {
@@ -162,7 +165,7 @@ export default function AppShell() {
 
   const toggleFav = useCallback(
     (id: string) => {
-      const g = getLibraryGame(id);
+      const g = activeLibrary.find((game) => game.id === id);
       if (!g) return;
       setStore((s) => {
         const has = s.favorites.includes(id);
@@ -171,7 +174,7 @@ export default function AppShell() {
         return { ...s, favorites: has ? s.favorites.filter((f) => f !== id) : [...s.favorites, id] };
       });
     },
-    [notify]
+    [activeLibrary, notify]
   );
 
   const handlePlay = useCallback(
@@ -210,23 +213,26 @@ export default function AppShell() {
     [handlePlay, handleInstall]
   );
 
-  const selectedGame = useMemo(() => getLibraryGame(selectedId), [selectedId]);
-  const carouselGames = useMemo(() => carouselIds.map(getLibraryGame).filter((g): g is UnifiedGame => !!g), []);
+  const selectedGame = useMemo(() => activeLibrary.find((game) => game.id === selectedId), [activeLibrary, selectedId]);
+  const carouselGames = useMemo(
+    () => carouselIds.map((id) => activeLibrary.find((game) => game.id === id)).filter((g): g is UnifiedGame => !!g),
+    [activeLibrary]
+  );
   const safeFavorites = useMemo(
-    () => (Array.isArray(store.favorites) ? store.favorites.filter((f) => getLibraryGame(f)) : []),
-    [store.favorites]
+    () => (Array.isArray(store.favorites) ? store.favorites.filter((f) => activeLibrary.some((game) => game.id === f)) : []),
+    [activeLibrary, store.favorites]
   );
 
   // Ready To Play derives from installed state — no separate sidebar list.
   const readyToPlay = useMemo(() => {
     const q = libraryQuery.trim().toLowerCase();
-    const installed = getInstalledGames(libraryGames);
+    const installed = getInstalledGames(activeLibrary);
     if (!q) return installed;
     return installed.filter((g) => g.title.toLowerCase().includes(q));
-  }, [libraryQuery]);
+  }, [activeLibrary, libraryQuery]);
 
-  const gameOverlay = overlay?.type === 'game' ? getLibraryGame(overlay.id) ?? null : null;
-  const providerOverlay = overlay?.type === 'provider' ? getLibraryGame(overlay.id) ?? null : null;
+  const gameOverlay = overlay?.type === 'game' ? activeLibrary.find((game) => game.id === overlay.id) ?? null : null;
+  const providerOverlay = overlay?.type === 'provider' ? activeLibrary.find((game) => game.id === overlay.id) ?? null : null;
 
   return (
     <div className="relative h-screen w-screen overflow-hidden" style={{ background: BACKGROUNDS[prefs.theme] }}>
@@ -251,7 +257,7 @@ export default function AppShell() {
             setActiveNav={changeNav}
             globalQuery={globalQuery}
             setGlobalQuery={setGlobalQuery}
-            library={libraryGames}
+            library={activeLibrary}
             favorites={safeFavorites}
             theme={prefs.theme}
             onCycleTheme={() =>

@@ -12,6 +12,7 @@ import ProfilePanel from './ProfilePanel';
 import CommunityPreview from './CommunityPreview';
 import SignOutDialog from './SignOutDialog';
 import ProviderSelector from './ProviderSelector';
+import LibraryEmptyState from './LibraryEmptyState';
 import StoreView from '../views/StoreView';
 import CommunityView from '../views/CommunityView';
 import { EarlyView, IndiesView } from '../views/Collections';
@@ -143,7 +144,7 @@ export default function AppShell() {
     [handlePlay, handleInstall]
   );
 
-  const selectedGame = useMemo(() => getLibraryGame(selectedId) ?? getLibraryGame('forza')!, [selectedId]);
+  const selectedGame = useMemo(() => getLibraryGame(selectedId), [selectedId]);
   const carouselGames = useMemo(() => carouselIds.map(getLibraryGame).filter((g): g is UnifiedGame => !!g), []);
   const safeFavorites = useMemo(
     () => (Array.isArray(store.favorites) ? store.favorites.filter((f) => getLibraryGame(f)) : []),
@@ -208,13 +209,21 @@ export default function AppShell() {
               >
                 {activeNav === 'Home' && (
                   <>
-                    <HeroBanner
-                      game={selectedGame}
-                      onCta={(g) => openOverlay({ type: 'game', id: g.id })}
-                      parallax={prefs.parallax}
-                      forceReduced={prefs.reduceMotion}
-                    />
-                    <GameCarousel games={carouselGames} selectedId={selectedId} onSelect={selectGame} inertia={prefs.inertia} />
+                    {selectedGame ? (
+                      <>
+                        <HeroBanner
+                          game={selectedGame}
+                          onCta={(g) => openOverlay({ type: 'game', id: g.id })}
+                          parallax={prefs.parallax}
+                          forceReduced={prefs.reduceMotion}
+                        />
+                        {carouselGames.length > 0 && (
+                          <GameCarousel games={carouselGames} selectedId={selectedId} onSelect={selectGame} inertia={prefs.inertia} />
+                        )}
+                      </>
+                    ) : (
+                      <LibraryEmptyState onConnect={() => openOverlay({ type: 'settings' })} />
+                    )}
                   </>
                 )}
                 {activeNav === 'Store' && (

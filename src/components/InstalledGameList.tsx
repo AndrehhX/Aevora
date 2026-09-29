@@ -14,7 +14,7 @@ export default function InstalledGameList({
   compact?: boolean;
 }) {
   if (games.length === 0) {
-    return <div className="px-2 py-4 text-[11px] text-[#BEA0D8]/40">No games found</div>;
+    return <div className="px-2 py-4 text-[11px] leading-relaxed text-[#BEA0D8]/45">Connect a provider to see installed games.</div>;
   }
   return (
     <motion.div layout className="flex flex-col gap-[2px]">

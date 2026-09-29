@@ -20,6 +20,7 @@ import { DURATION, EASE } from '../motion/presets';
 import Modal from './Modal';
 import ProviderBadge from './ProviderBadge';
 import { SmartImage } from './SmartImage';
+import type { LaunchResult } from '../integrations/steam/steamLaunch';
 
 type Phase = 'idle' | 'working' | 'playing';
 
@@ -41,8 +42,8 @@ export default function GameDetails({
   onToggleFav: (id: string) => void;
   preferred?: ProviderId;
   sessionLastPlayed?: number;
-  onPlay: (game: UnifiedGame, entry: GameProviderEntry) => void;
-  onInstall: (game: UnifiedGame, entry: GameProviderEntry) => void;
+  onPlay: (game: UnifiedGame, entry: GameProviderEntry) => Promise<LaunchResult> | void;
+  onInstall: (game: UnifiedGame, entry: GameProviderEntry) => Promise<LaunchResult> | void;
   onNeedProviderChoice: (game: UnifiedGame, mode: 'play' | 'install') => void;
   onClose: () => void;
 }) {
@@ -83,13 +84,14 @@ export default function GameDetails({
         return;
       }
       setPhase('working');
-      timers.current.push(
-        window.setTimeout(() => {
+      void Promise.resolve(onPlay(game, pick)).then((result: void | LaunchResult) => {
+        if (result && result.status === 'started') {
           setPhase('playing');
-          onPlay(game, pick);
           timers.current.push(window.setTimeout(() => setPhase('idle'), 2600));
-        }, 900)
-      );
+        } else {
+          setPhase('idle');
+        }
+      });
     } else {
       const candidates = ownedProviders;
       if (candidates.length === 0) return;
@@ -100,12 +102,7 @@ export default function GameDetails({
       }
       const entry = pick ?? candidates[0];
       setPhase('working');
-      timers.current.push(
-        window.setTimeout(() => {
-          setPhase('idle');
-          onInstall(game, entry);
-        }, 900)
-      );
+      void Promise.resolve(onInstall(game, entry)).then(() => setPhase('idle'));
     }
   };
 

@@ -28,6 +28,7 @@ import { communityItems, navItems } from '../data/mock';
 import { createLocalCacheStore } from '../integrations/cache/cacheStore';
 import { createSteamAdapter, SteamAdapterError, type ConnectionState } from '../integrations/steam/steamAdapter';
 import type { SteamNewsItem } from '../integrations/steam/steamNews';
+import { launchGame, openStore, type LaunchResult } from '../integrations/steam/steamLaunch';
 
 type Overlay =
   | { type: 'game'; id: string }
@@ -160,16 +161,24 @@ export default function AppShell() {
   );
 
   const handlePlay = useCallback(
-    (game: UnifiedGame, entry: GameProviderEntry) => {
-      setStore((s) => ({ ...s, playHistory: { ...s.playHistory, [game.id]: Date.now() } }));
-      notify(`Launching with ${providerName(entry.provider)}...`);
+    async (game: UnifiedGame, entry: GameProviderEntry): Promise<LaunchResult> => {
+      const result = await launchGame(entry);
+      if (result.status === 'started') {
+        setStore((s) => ({ ...s, playHistory: { ...s.playHistory, [game.id]: Date.now() } }));
+        notify(`Opened ${providerName(entry.provider)}.`);
+      } else {
+        notify(result.message);
+      }
+      return result;
     },
     [notify]
   );
 
   const handleInstall = useCallback(
-    (_game: UnifiedGame, entry: GameProviderEntry) => {
-      notify(`Opening ${providerName(entry.provider)}...`);
+    async (_game: UnifiedGame, entry: GameProviderEntry): Promise<LaunchResult> => {
+      const result = await openStore(entry);
+      notify(result.status === 'started' ? `Opened ${providerName(entry.provider)} store.` : result.message);
+      return result;
     },
     [notify]
   );

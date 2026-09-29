@@ -14,7 +14,7 @@
 
 - Never commit or persist a real Steam API key in the frontend, repository, localStorage, or `.env` files.
 - Never ask for or store a Steam password.
-- Native commands receive no API key from the frontend; Rust reads it from Windows Credential Manager.
+- Only `steam_save_credentials` receives the API key from the frontend; all later native commands read it from Windows Credential Manager.
 - Browser preview must report native-unavailable honestly.
 - Every production behavior change gets a failing test before implementation.
 - Keep the existing Aevora in-app label; use `Nexux` for the public repository name.
@@ -23,7 +23,7 @@
 
 - A private Steam profile must not turn into an empty fake success; test the actionable error.
 - A missing Windows keyring record must not trigger a network request; test the early failure.
-- An API key must never cross the bridge payload; test the command payload shape.
+- An API key may cross the bridge only for `steam_save_credentials`; test that later commands have no credential payload.
 - Steam responses with missing app names or invalid IDs must be discarded safely; test normalization.
 - Browser mode must not claim that account setup or live data succeeded; test native-unavailable behavior.
 

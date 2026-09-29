@@ -9,7 +9,7 @@ Allow each Nexux user to configure their own Steam account on their own Windows 
 - The public repository will be named `Nexux`; the existing in-app product label remains `Aevora` until a separate branding change is requested.
 - The launcher accepts a SteamID64 or Steam vanity identifier and a Steam Web API key. It never asks for or stores a Steam password.
 - Credentials are stored as one JSON record in Windows Credential Manager through the Tauri/Rust boundary. The frontend never receives the API key after saving it.
-- The frontend invokes native commands without credentials. Rust reads the credential record, calls Steam, validates responses, and returns normalized data.
+- The frontend sends the API key only to the one local save command. All later native commands receive no credentials; Rust reads the credential record, calls Steam, validates responses, and returns normalized data.
 - The owned library uses `IPlayerService/GetOwnedGames` with app info and played free games enabled. A private Steam profile produces a clear unavailable state rather than fake games.
 - App details use Steam's public Store API; news uses `ISteamNews/GetNewsForApp`. Artwork URLs are taken from Steam's response when available and use Steam CDN fallbacks only for valid AppIDs.
 - Browser mode remains a truthful preview: native-only configuration and live Steam calls report that the desktop runtime is required.

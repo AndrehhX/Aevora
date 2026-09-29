@@ -77,6 +77,31 @@ describe('SteamAdapter', () => {
     await expect(limited.connect()).rejects.toMatchObject({ code: 'rate-limited' });
   });
 
+  it('preserves the native provider error when Steam rejects a connection', async () => {
+    const adapter = createSteamAdapter({
+      client: clientWith({ connect: async () => { throw 'Steam API key rejected.'; } }),
+      cache: createMemoryCacheStore(),
+    });
+
+    await expect(adapter.connect()).rejects.toMatchObject({
+      code: 'offline',
+      message: 'Steam API key rejected.',
+    });
+  });
+
+  it('preserves the native provider error when the library is unavailable', async () => {
+    const adapter = createSteamAdapter({
+      client: clientWith({ getOwnedGames: async () => { throw 'Steam profile game details are private.'; } }),
+      cache: createMemoryCacheStore(),
+    });
+
+    await adapter.connect();
+    await expect(adapter.getLibrary()).rejects.toMatchObject({
+      code: 'offline',
+      message: 'Steam profile game details are private.',
+    });
+  });
+
   it('uses a stale cached library when Steam is temporarily offline', async () => {
     let now = 1000;
     const cache = createMemoryCacheStore(() => now);

@@ -151,6 +151,22 @@ fn new_client() -> Result<Client, String> {
         .map_err(|_| "Could not prepare the Steam connection.".to_string())
 }
 
+pub fn normalize_steam_account(account: &str) -> String {
+    let trimmed = account.trim().trim_end_matches('/');
+    let without_scheme = trimmed
+        .strip_prefix("https://")
+        .or_else(|| trimmed.strip_prefix("http://"))
+        .unwrap_or(trimmed);
+    let without_host = without_scheme
+        .strip_prefix("steamcommunity.com/")
+        .unwrap_or(without_scheme);
+    let path = without_host
+        .strip_prefix("id/")
+        .or_else(|| without_host.strip_prefix("profiles/"))
+        .unwrap_or(without_host);
+    path.split(['/', '?', '#']).next().unwrap_or(path).to_string()
+}
+
 async fn get_json<T: DeserializeOwned>(
     client: &Client,
     url: &str,
@@ -172,15 +188,16 @@ async fn get_json<T: DeserializeOwned>(
 }
 
 async fn resolve_steam_id(client: &Client, account: &str, api_key: &str) -> Result<String, String> {
+    let account = normalize_steam_account(account);
     if account.chars().all(|character| character.is_ascii_digit()) && account.len() >= 10 {
-        return Ok(account.to_string());
+        return Ok(account);
     }
     let payload: VanityEnvelope = get_json(
         client,
         &format!("{STEAM_API}/ISteamUser/ResolveVanityURL/v0001/"),
         vec![
             ("key", api_key.to_string()),
-            ("vanityurl", account.to_string()),
+            ("vanityurl", account),
             ("format", "json".to_string()),
         ],
     )
@@ -320,7 +337,13 @@ pub fn steam_disconnect() {}
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_app_details, parse_news, parse_owned_games};
+    use super::{normalize_steam_account, parse_app_details, parse_news, parse_owned_games};
+
+    #[test]
+    fn normalizes_steam_profile_urls_before_vanity_resolution() {
+        assert_eq!(normalize_steam_account("https://steamcommunity.com/id/andreh/"), "andreh");
+        assert_eq!(normalize_steam_account("steamcommunity.com/profiles/76561198000000000"), "76561198000000000");
+    }
 
     #[test]
     fn parses_owned_games_and_rejects_a_private_profile_response() {

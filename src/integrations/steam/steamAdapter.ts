@@ -42,6 +42,16 @@ interface SteamAdapterOptions {
 const LIBRARY_TTL_MS = 5 * 60 * 1000;
 const STEAM_COMMUNITY_ASSET_BASE = 'https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps';
 
+function providerErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === 'string' && error.trim()) return error;
+  if (error instanceof Error && error.message.trim()) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) return message;
+  }
+  return fallback;
+}
+
 function mapConnection(response: SteamConnectionResponse): ConnectionState {
   if (response.status === 'connected' && response.steamId) {
     return { status: 'connected', steamId: response.steamId, displayName: response.displayName, expiresAt: response.expiresAt };
@@ -96,7 +106,7 @@ export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
         return connection;
       } catch (error) {
         if (error instanceof SteamAdapterError) throw error;
-        throw new SteamAdapterError('offline', 'Steam connection is unavailable.');
+        throw new SteamAdapterError('offline', providerErrorMessage(error, 'Steam connection is unavailable.'));
       }
     },
     async disconnect() {
@@ -117,22 +127,22 @@ export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
         const cached = await options.cache.get<UnifiedGame[]>(cacheKey);
         if (cached?.stale && cached.value.length > 0) return cached.value;
         if (error instanceof SteamAdapterError) throw error;
-        throw new SteamAdapterError('offline', 'Steam library is unavailable right now.');
+        throw new SteamAdapterError('offline', providerErrorMessage(error, 'Steam library is unavailable right now.'));
       }
     },
     async getAppDetails(appId) {
       if (!Number.isInteger(appId) || appId <= 0) throw new SteamAdapterError('invalid-response', 'Steam AppID must be a positive number.');
       try {
         return await client.getAppDetails(appId);
-      } catch {
-        throw new SteamAdapterError('offline', 'Steam game details are unavailable right now.');
+      } catch (error) {
+        throw new SteamAdapterError('offline', providerErrorMessage(error, 'Steam game details are unavailable right now.'));
       }
     },
     async getNews(appId) {
       try {
         return await newsLoader.load(appId);
-      } catch {
-        throw new SteamAdapterError('offline', 'Steam news is unavailable right now.');
+      } catch (error) {
+        throw new SteamAdapterError('offline', providerErrorMessage(error, 'Steam news is unavailable right now.'));
       }
     },
     getConnection: () => connection,

@@ -148,7 +148,7 @@ struct SteamPlayerSummary {
 
 fn new_client() -> Result<Client, String> {
     Client::builder()
-        .user_agent("Nexux/0.1.0")
+        .user_agent("Aevora/0.1.0")
         .connect_timeout(Duration::from_secs(8))
         .timeout(Duration::from_secs(STEAM_REQUEST_TIMEOUT_SECS))
         .build()

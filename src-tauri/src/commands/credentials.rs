@@ -1,7 +1,8 @@
 use keyring::Entry;
 use serde::{Deserialize, Serialize};
 
-const SERVICE: &str = "nexux-launcher";
+const CURRENT_SERVICE: &str = "aevora-launcher";
+const LEGACY_SERVICE: &str = "nexux-launcher";
 const ACCOUNT: &str = "steam-credentials";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -24,14 +25,31 @@ pub fn validate_credentials(mut credentials: SteamCredentials) -> Result<SteamCr
 }
 
 fn credential_entry() -> Result<Entry, String> {
-    Entry::new(SERVICE, ACCOUNT)
+    Entry::new(CURRENT_SERVICE, ACCOUNT)
+        .map_err(|error| format!("Could not access Windows Credential Manager: {error}"))
+}
+
+fn legacy_credential_entry() -> Result<Entry, String> {
+    Entry::new(LEGACY_SERVICE, ACCOUNT)
         .map_err(|error| format!("Could not access Windows Credential Manager: {error}"))
 }
 
 pub fn load_credentials() -> Result<SteamCredentials, String> {
-    let raw = credential_entry()?
-        .get_password()
-        .map_err(|error| format!("Could not read local Steam credentials: {error}"))?;
+    let raw = match credential_entry()?.get_password() {
+        Ok(raw) => raw,
+        Err(keyring::Error::NoEntry) => {
+            let legacy = legacy_credential_entry()?.get_password().map_err(|error| {
+                format!("Could not read local Steam credentials: {error}")
+            })?;
+            // Keep existing installations working after the product rename. The old
+            // record is copied locally to the new service on first read.
+            if let Ok(entry) = credential_entry() {
+                let _ = entry.set_password(&legacy);
+            }
+            legacy
+        }
+        Err(error) => return Err(format!("Could not read local Steam credentials: {error}")),
+    };
     serde_json::from_str(&raw)
         .map_err(|_| "Local Steam credentials are invalid. Save them again.".to_string())
 }
@@ -50,7 +68,13 @@ pub fn steam_save_credentials(credentials: SteamCredentials) -> Result<(), Strin
 pub fn steam_has_credentials() -> Result<bool, String> {
     match credential_entry()?.get_password() {
         Ok(_) => Ok(true),
-        Err(keyring::Error::NoEntry) => Ok(false),
+        Err(keyring::Error::NoEntry) => match legacy_credential_entry()?.get_password() {
+            Ok(_) => Ok(true),
+            Err(keyring::Error::NoEntry) => Ok(false),
+            Err(error) => Err(format!(
+                "Could not inspect local Steam credentials: {error}"
+            )),
+        },
         Err(error) => Err(format!(
             "Could not inspect local Steam credentials: {error}"
         )),
@@ -60,6 +84,10 @@ pub fn steam_has_credentials() -> Result<bool, String> {
 #[tauri::command]
 pub fn steam_clear_credentials() -> Result<(), String> {
     match credential_entry()?.delete_credential() {
+        Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+        Err(error) => Err(format!("Could not clear local Steam credentials: {error}")),
+    }?;
+    match legacy_credential_entry()?.delete_credential() {
         Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
         Err(error) => Err(format!("Could not clear local Steam credentials: {error}")),
     }
@@ -106,7 +134,7 @@ mod tests {
     #[cfg(windows)]
     #[test]
     fn windows_credential_manager_round_trips_a_local_record() {
-        let entry = Entry::new("nexux-launcher-test", "steam-credentials")
+        let entry = Entry::new("aevora-launcher-test", "steam-credentials")
             .expect("Windows Credential Manager entry should be constructible");
         let result = (|| {
             entry

@@ -8,9 +8,9 @@ Owned games are different. Steam's `IPlayerService/GetOwnedGames` endpoint requi
 
 ## Local configuration
 
-The desktop Settings panel accepts a SteamID64 or Steam vanity identifier and a Steam Web API key. The key is masked in the form, sent only to the local `steam_save_credentials` command, and stored in Windows Credential Manager under the Nexux launcher service. It is not written to `localStorage`, the repository, `.env`, or the frontend bundle.
+The desktop Settings panel accepts a SteamID64 or Steam vanity identifier and a Steam Web API key. The key is masked in the form, sent only to the local `steam_save_credentials` command, and stored in Windows Credential Manager under the Aevora launcher service. It is not written to `localStorage`, the repository, `.env`, or the frontend bundle.
 
-Nexux deliberately does not ask for a Steam password. The current supported path is API-key plus SteamID/vanity resolution; browser preview reports that a desktop runtime is required. A future OpenID flow may remove the manual identifier step, but it is not claimed as implemented here.
+Aevora deliberately does not ask for a Steam password. The current supported path is API-key plus SteamID/vanity resolution; browser preview reports that a desktop runtime is required. A future OpenID flow may remove the manual identifier step, but it is not claimed as implemented here.
 
 ## Expected flow
 

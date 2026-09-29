@@ -1,6 +1,6 @@
-# Nexux
+# Aevora
 
-Nexux is a desktop-first game launcher built around one unified library. `Aevora` remains the current in-app label. The interface is React and TypeScript; the native boundary is Tauri and Rust. Without a connected provider, the library stays empty instead of showing invented games.
+Aevora is a desktop-first game launcher built around one unified library. The interface is React and TypeScript; the native boundary is Tauri and Rust. Without a connected provider, the library stays empty instead of showing invented games.
 
 ## Stack
 

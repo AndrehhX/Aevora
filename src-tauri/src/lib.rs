@@ -9,6 +9,11 @@ pub fn run() {
             commands::credentials::steam_clear_credentials,
             commands::launch::steam_launch_game,
             commands::launch::steam_open_store,
+            commands::steam::steam_connect,
+            commands::steam::steam_get_owned_games,
+            commands::steam::steam_get_app_details,
+            commands::steam::steam_get_news,
+            commands::steam::steam_disconnect,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Aevora");

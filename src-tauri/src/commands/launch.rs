@@ -12,9 +12,7 @@ fn valid_app_id(app_id: &str) -> bool {
 }
 
 fn open_steam_uri(uri: &str) -> LaunchResult {
-    let result = Command::new("cmd")
-        .args(["/C", "start", "", uri])
-        .status();
+    let result = Command::new("cmd").args(["/C", "start", "", uri]).status();
 
     match result {
         Ok(status) if status.success() => LaunchResult {
@@ -23,7 +21,8 @@ fn open_steam_uri(uri: &str) -> LaunchResult {
         },
         Ok(_) => LaunchResult {
             status: "failed",
-            message: "Windows could not open Steam. Check that the Steam client is installed.".to_string(),
+            message: "Windows could not open Steam. Check that the Steam client is installed."
+                .to_string(),
         },
         Err(error) => LaunchResult {
             status: "failed",

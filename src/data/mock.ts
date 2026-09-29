@@ -10,6 +10,7 @@ export interface CommunityItem {
   source: string;
   thumb: string;
   fallback: string;
+  url?: string;
 }
 
 const steam = (appId: number, file: string) =>

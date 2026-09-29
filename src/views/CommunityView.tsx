@@ -14,6 +14,7 @@ function asCommunityItem(news: SteamNewsItem): CommunityItem {
     source: news.stale ? `${news.feedLabel ?? 'Steam News'} · cached` : news.feedLabel ?? 'Steam News',
     thumb: '',
     fallback: '',
+    url: news.url,
   };
 }
 

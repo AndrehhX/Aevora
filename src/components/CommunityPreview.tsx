@@ -27,6 +27,16 @@ export default function CommunityPreview({
           {item.headline}
         </h2>
         <p className="mt-2 text-[12.5px] leading-relaxed text-[#D9C6EA]/80">{item.excerpt}</p>
+        {item.url && (
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-flex rounded-full border border-[rgba(217,198,234,0.16)] px-3 py-1.5 text-[11px] font-semibold text-[#F1EAF8]/85 transition-colors hover:border-[rgba(190,160,216,0.45)] hover:bg-[rgba(130,99,161,0.22)]"
+          >
+            Open source
+          </a>
+        )}
       </div>
     </Modal>
   );

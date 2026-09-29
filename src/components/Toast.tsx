@@ -21,6 +21,9 @@ export default function ToastHost({ toast, onDone }: { toast: ToastData | null; 
         {toast && (
           <motion.div
             key={toast.id}
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
             initial={{ opacity: 0, y: 10, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}

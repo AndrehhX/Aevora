@@ -71,6 +71,11 @@ body{
   }
 }
 
+html[data-aevora-cursor="off"] body,
+html[data-aevora-cursor="off"] body *{
+  cursor: auto;
+}
+
 @media (prefers-reduced-motion: reduce){
   *{ animation-duration:0.01ms !important; transition-duration:0.01ms !important; }
 }

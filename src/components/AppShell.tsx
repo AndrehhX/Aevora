@@ -29,6 +29,7 @@ import { navItems } from '../data/navigation';
 import { createLocalCacheStore } from '../integrations/cache/cacheStore';
 import { createSteamAdapter, SteamAdapterError, type ConnectionState } from '../integrations/steam/steamAdapter';
 import type { SteamNewsItem } from '../integrations/steam/steamNews';
+import type { SteamStoreCategories, SteamStoreOffer } from '../integrations/steam/steamStore';
 import { launchGame, openStore, type LaunchResult } from '../integrations/steam/steamLaunch';
 import { getDesktopBridge } from '../integrations/desktop/bridge';
 import type { SteamCredentialsInput } from '../integrations/steam/steamCredentials';
@@ -73,6 +74,9 @@ export default function AppShell() {
   const [steamConnectionMessage, setSteamConnectionMessage] = useState<string | null>(null);
   const [activeLibrary, setActiveLibrary] = useState<UnifiedGame[]>(() => libraryGames);
   const [steamNews, setSteamNews] = useState<SteamNewsItem[]>([]);
+  const [steamStore, setSteamStore] = useState<SteamStoreCategories | null>(null);
+  const [steamStoreLoading, setSteamStoreLoading] = useState(false);
+  const [steamStoreError, setSteamStoreError] = useState<string | null>(null);
   const nativeAvailable = useMemo(() => getDesktopBridge().isNative, []);
   const autoConnectAttempted = useRef(false);
 
@@ -156,6 +160,24 @@ export default function AppShell() {
       notify('Steam could not be disconnected.');
     }
   }, [notify, steamAdapter]);
+
+  const loadSteamStore = useCallback(async () => {
+    if (steamStoreLoading || steamStore) return;
+    setSteamStoreLoading(true);
+    setSteamStoreError(null);
+    try {
+      setSteamStore(await steamAdapter.getStore());
+    } catch (error) {
+      const message = error instanceof SteamAdapterError ? error.message : 'Steam store offers are unavailable right now.';
+      setSteamStoreError(message);
+    } finally {
+      setSteamStoreLoading(false);
+    }
+  }, [steamAdapter, steamStore, steamStoreLoading]);
+
+  useEffect(() => {
+    if (activeNav === 'Store') void loadSteamStore();
+  }, [activeNav, loadSteamStore]);
 
   const saveSteamCredentials = useCallback(async (credentials: SteamCredentialsInput) => {
     await steamAdapter.saveCredentials(credentials);
@@ -347,7 +369,16 @@ export default function AppShell() {
                   </>
                 )}
                 {activeNav === 'Store' && (
-                  <StoreView selectedId={selectedId} onSelect={selectGame} onInspect={(id) => openOverlay({ type: 'game', id })} />
+                  <StoreView
+                    offers={steamStore}
+                    selectedAppId={selectedGame?.providers.find((entry) => entry.provider === 'steam')?.externalId ? Number(selectedGame.providers.find((entry) => entry.provider === 'steam')?.externalId) : null}
+                    loading={steamStoreLoading}
+                    error={steamStoreError}
+                    onOpenStore={(offer: SteamStoreOffer) => {
+                      const entry: GameProviderEntry = { provider: 'steam', externalId: String(offer.appId), owned: false, installed: false };
+                      void handleInstall({ id: `steam:${offer.appId}`, title: offer.name, artwork: { cover: offer.capsuleImage ?? offer.headerImage ?? '', coverFallback: offer.headerImage ?? offer.capsuleImage ?? '', hero: offer.headerImage ?? offer.capsuleImage ?? '', heroFallback: offer.capsuleImage ?? offer.headerImage ?? '' }, providers: [entry] }, entry);
+                    }}
+                  />
                 )}
                 {activeNav === 'Community' && (
                   <CommunityView news={steamNews} onPreview={(item) => openOverlay({ type: 'community', item })} />

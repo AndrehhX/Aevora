@@ -1,5 +1,6 @@
 import { getDesktopBridge, type DesktopBridge } from '../desktop/bridge';
 import type { SteamNewsResponse } from './steamNews';
+import type { SteamStoreCategoriesPayload } from './steamStore';
 
 export type SteamConnectionStatus = 'connected' | 'canceled' | 'expired' | 'rate-limited' | 'offline';
 
@@ -43,6 +44,7 @@ export interface SteamClient {
   getOwnedGames(): Promise<SteamOwnedGame[]>;
   getAppDetails(appId: number): Promise<SteamAppDetails>;
   getNews(appId: number): Promise<SteamNewsResponse>;
+  getStoreCategories(): Promise<SteamStoreCategoriesPayload>;
   disconnect(): Promise<void>;
 }
 
@@ -52,6 +54,7 @@ export function createSteamClient(bridge: DesktopBridge = getDesktopBridge()): S
     getOwnedGames: () => bridge.invoke<SteamOwnedGame[]>('steam_get_owned_games'),
     getAppDetails: (appId) => bridge.invoke<SteamAppDetails>('steam_get_app_details', { appId }),
     getNews: (appId) => bridge.invoke<SteamNewsResponse>('steam_get_news', { appId }),
+    getStoreCategories: () => bridge.invoke<SteamStoreCategoriesPayload>('steam_get_store_categories'),
     disconnect: () => bridge.invoke<void>('steam_disconnect'),
   };
 }

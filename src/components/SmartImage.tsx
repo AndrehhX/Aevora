@@ -22,9 +22,9 @@ export function SmartImage({
   useEffect(() => {
     setFailed(src ? 'primary' : fallback ? 'fallback' : fallback2 ? 'fallback2' : 'placeholder');
     setLoaded(false);
-  }, [src, fallback]);
+  }, [src, fallback, fallback2]);
 
-  if (failed === 'placeholder' || (!src && !fallback)) {
+  if (failed === 'placeholder' || (!src && !fallback && !fallback2)) {
     return (
       <div
         className={className}

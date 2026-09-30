@@ -4,6 +4,7 @@ import type { SteamAppDetails, SteamClient, SteamConnectionResponse, SteamOwnedG
 import { createSteamClient } from './steamClient';
 import { resolveSteamAssets } from './steamAssets';
 import { createSteamNewsLoader, type SteamNewsResult } from './steamNews';
+import { createSteamStoreLoader, type SteamStoreCategories } from './steamStore';
 import { createSteamCredentialClient, type SteamCredentialClient, type SteamCredentialsInput } from './steamCredentials';
 
 export type ConnectionState =
@@ -29,6 +30,7 @@ export interface SteamAdapter {
   getLibrary(): Promise<UnifiedGame[]>;
   getAppDetails(appId: number): Promise<SteamAppDetails>;
   getNews(appId: number): Promise<SteamNewsResult>;
+  getStore(): Promise<SteamStoreCategories>;
   getConnection(): ConnectionState;
 }
 
@@ -117,6 +119,7 @@ export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
   const now = options.now ?? Date.now;
   const ttlMs = options.libraryTtlMs ?? LIBRARY_TTL_MS;
   const newsLoader = createSteamNewsLoader({ client, cache: options.cache, now });
+  const storeLoader = createSteamStoreLoader({ client, cache: options.cache, now });
   let connection: ConnectionState = { status: 'disconnected' };
 
   async function hydrateGame(game: SteamOwnedGame): Promise<UnifiedGame> {
@@ -184,6 +187,13 @@ export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
         return await newsLoader.load(appId);
       } catch (error) {
         throw new SteamAdapterError('offline', providerErrorMessage(error, 'Steam news is unavailable right now.'));
+      }
+    },
+    async getStore() {
+      try {
+        return await storeLoader.load();
+      } catch (error) {
+        throw new SteamAdapterError('offline', providerErrorMessage(error, 'Steam store offers are unavailable right now.'));
       }
     },
     getConnection: () => connection,

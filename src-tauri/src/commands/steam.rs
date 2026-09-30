@@ -14,6 +14,7 @@ use winreg::RegKey;
 
 const STEAM_API: &str = "https://api.steampowered.com";
 const STEAM_STORE_API: &str = "https://store.steampowered.com/api/appdetails";
+const STEAM_FEATURED_API: &str = "https://store.steampowered.com/api/featuredcategories/";
 const STEAM_REQUEST_TIMEOUT_SECS: u64 = 20;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -107,6 +108,44 @@ pub struct SteamAppNews {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SteamNewsResponse {
     pub appnews: SteamAppNews,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SteamStoreItem {
+    #[serde(default)]
+    pub id: Option<u32>,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub header_image: Option<String>,
+    #[serde(default)]
+    pub large_capsule_image: Option<String>,
+    #[serde(default)]
+    pub small_capsule_image: Option<String>,
+    #[serde(default)]
+    pub discount_percent: Option<u32>,
+    #[serde(default)]
+    pub original_price: Option<u64>,
+    #[serde(default)]
+    pub final_price: Option<u64>,
+    #[serde(default)]
+    pub currency: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct SteamStoreSection {
+    #[serde(default)]
+    pub items: Vec<SteamStoreItem>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct SteamStoreCategories {
+    #[serde(default)]
+    pub featured_win: SteamStoreSection,
+    #[serde(default)]
+    pub top_sellers: SteamStoreSection,
+    #[serde(default)]
+    pub specials: SteamStoreSection,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -488,6 +527,10 @@ pub fn parse_news(payload: &str) -> Result<SteamNewsResponse, String> {
     serde_json::from_str(payload).map_err(|_| "Steam returned invalid news data.".to_string())
 }
 
+pub fn parse_store_categories(payload: &str) -> Result<SteamStoreCategories, String> {
+    serde_json::from_str(payload).map_err(|_| "Steam returned invalid store data.".to_string())
+}
+
 #[tauri::command]
 pub async fn steam_connect() -> Result<SteamConnectionResponse, String> {
     let credentials = load_credentials()?;
@@ -584,6 +627,22 @@ pub async fn steam_get_news(app_id: u32) -> Result<SteamNewsResponse, String> {
 }
 
 #[tauri::command]
+pub async fn steam_get_store_categories() -> Result<SteamStoreCategories, String> {
+    let client = new_client()?;
+    get_json(
+        &client,
+        STEAM_FEATURED_API,
+        vec![("cc", "gt".to_string()), ("l", "english".to_string())],
+    )
+    .await
+    .and_then(|payload: SteamStoreCategories| {
+        serde_json::to_string(&payload)
+            .map_err(|_| "Steam returned invalid store data.".to_string())
+            .and_then(|json| parse_store_categories(&json))
+    })
+}
+
+#[tauri::command]
 pub fn steam_disconnect() {}
 
 #[cfg(test)]
@@ -591,6 +650,7 @@ mod tests {
     use super::{
         merge_local_games, normalize_steam_account, parse_app_details, parse_library_folder_paths,
         parse_manifest_install_dir, parse_manifest_name, parse_news, parse_owned_games,
+        parse_store_categories,
         LocalSteamGame, SteamOwnedGame,
     };
     use std::collections::HashMap;
@@ -636,6 +696,14 @@ mod tests {
         let news = parse_news(payload).unwrap();
         assert_eq!(news.appnews.newsitems[0].url, "https://steam.test/update");
         assert_eq!(news.appnews.newsitems[0].date, 1700000000);
+    }
+
+    #[test]
+    fn parses_public_store_categories_without_needing_account_data() {
+        let payload = r#"{"specials":{"items":[{"id":440,"name":"Team Fortress 2","discount_percent":75,"original_price":799,"final_price":199,"currency":"USD"}]},"top_sellers":{"items":[]}}"#;
+        let categories = parse_store_categories(payload).unwrap();
+        assert_eq!(categories.specials.items[0].id, Some(440));
+        assert_eq!(categories.specials.items[0].discount_percent, Some(75));
     }
 
     #[test]

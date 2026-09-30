@@ -1,24 +1,24 @@
 import { motion } from 'framer-motion';
 import type { CommunityItem } from '../data/navigation';
-import type { SteamNewsItem } from '../integrations/steam/steamNews';
+import type { SteamCommunityItem } from '../integrations/steam/steamNews';
 import { EASE } from '../motion/presets';
 import { SmartImage } from '../components/SmartImage';
 
-function asCommunityItem(news: SteamNewsItem): CommunityItem {
+function asCommunityItem(news: SteamCommunityItem): CommunityItem {
   return {
     id: `steam-news:${news.id}`,
     text: news.contents || news.title,
     headline: news.title,
     excerpt: news.contents || 'Open the source to read the full Steam update.',
     time: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(news.publishedAt)),
-    source: news.stale ? `${news.feedLabel ?? 'Steam News'} · cached` : news.feedLabel ?? 'Steam News',
+    source: news.stale ? `${news.gameTitle} · cached` : news.gameTitle,
     thumb: '',
     fallback: '',
     url: news.url,
   };
 }
 
-export default function CommunityView({ news = [], onPreview }: { news?: SteamNewsItem[]; onPreview: (item: CommunityItem) => void }) {
+export default function CommunityView({ news = [], onPreview }: { news?: SteamCommunityItem[]; onPreview: (item: CommunityItem) => void }) {
   const feed = news.map(asCommunityItem);
   return (
     <motion.div

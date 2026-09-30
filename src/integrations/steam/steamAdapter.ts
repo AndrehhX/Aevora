@@ -3,7 +3,7 @@ import type { UnifiedGame } from '../../domain/game';
 import type { SteamAppDetails, SteamClient, SteamConnectionResponse, SteamOwnedGame } from './steamClient';
 import { createSteamClient } from './steamClient';
 import { resolveSteamAssets } from './steamAssets';
-import { createSteamNewsLoader, type SteamNewsResult } from './steamNews';
+import { createSteamCommunityLoader, createSteamNewsLoader, type SteamCommunityResult, type SteamNewsResult } from './steamNews';
 import { createSteamStoreLoader, type SteamStoreCategories } from './steamStore';
 import { createSteamCredentialClient, type SteamCredentialClient, type SteamCredentialsInput } from './steamCredentials';
 
@@ -30,6 +30,7 @@ export interface SteamAdapter {
   getLibrary(): Promise<UnifiedGame[]>;
   getAppDetails(appId: number): Promise<SteamAppDetails>;
   getNews(appId: number): Promise<SteamNewsResult>;
+  getCommunity(games: UnifiedGame[]): Promise<SteamCommunityResult>;
   getStore(): Promise<SteamStoreCategories>;
   getConnection(): ConnectionState;
 }
@@ -119,6 +120,7 @@ export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
   const now = options.now ?? Date.now;
   const ttlMs = options.libraryTtlMs ?? LIBRARY_TTL_MS;
   const newsLoader = createSteamNewsLoader({ client, cache: options.cache, now });
+  const communityLoader = createSteamCommunityLoader({ client, cache: options.cache, now });
   const storeLoader = createSteamStoreLoader({ client, cache: options.cache, now });
   let connection: ConnectionState = { status: 'disconnected' };
 
@@ -188,6 +190,14 @@ export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
       } catch (error) {
         throw new SteamAdapterError('offline', providerErrorMessage(error, 'Steam news is unavailable right now.'));
       }
+    },
+    async getCommunity(games) {
+      const refs = games.flatMap((game) => {
+        const steam = game.providers.find((entry) => entry.provider === 'steam');
+        const appId = steam ? Number(steam.externalId) : 0;
+        return appId > 0 ? [{ appId, gameTitle: game.title }] : [];
+      });
+      return communityLoader.load(refs);
     },
     async getStore() {
       try {

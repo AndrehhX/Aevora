@@ -28,7 +28,7 @@ import type { CommunityItem } from '../data/navigation';
 import { navItems } from '../data/navigation';
 import { createLocalCacheStore } from '../integrations/cache/cacheStore';
 import { createSteamAdapter, SteamAdapterError, type ConnectionState } from '../integrations/steam/steamAdapter';
-import type { SteamNewsItem } from '../integrations/steam/steamNews';
+import type { SteamCommunityItem } from '../integrations/steam/steamNews';
 import type { SteamStoreCategories, SteamStoreOffer } from '../integrations/steam/steamStore';
 import { launchGame, openStore, type LaunchResult } from '../integrations/steam/steamLaunch';
 import { getDesktopBridge } from '../integrations/desktop/bridge';
@@ -73,7 +73,7 @@ export default function AppShell() {
   const [steamConnection, setSteamConnection] = useState<ConnectionState>({ status: 'disconnected' });
   const [steamConnectionMessage, setSteamConnectionMessage] = useState<string | null>(null);
   const [activeLibrary, setActiveLibrary] = useState<UnifiedGame[]>(() => libraryGames);
-  const [steamNews, setSteamNews] = useState<SteamNewsItem[]>([]);
+  const [steamNews, setSteamNews] = useState<SteamCommunityItem[]>([]);
   const [steamStore, setSteamStore] = useState<SteamStoreCategories | null>(null);
   const [steamStoreLoading, setSteamStoreLoading] = useState(false);
   const [steamStoreError, setSteamStoreError] = useState<string | null>(null);
@@ -101,19 +101,18 @@ export default function AppShell() {
         }
         setLibraryGames(games);
         setActiveLibrary(games);
-        const firstGame = games[0];
         let newsMessage: string | null = null;
-        if (firstGame) {
-          setSelectedId(firstGame.id);
-          const steamId = firstGame.providers.find((entry) => entry.provider === 'steam')?.externalId;
-          if (steamId) {
-            try {
-              const news = await steamAdapter.getNews(Number(steamId));
-              setSteamNews(news.items);
-            } catch (error) {
-              newsMessage = error instanceof SteamAdapterError ? error.message : 'Steam news could not be loaded.';
-              setSteamNews([]);
+        if (games[0]) setSelectedId(games[0].id);
+        if (games.length > 0) {
+          try {
+            const community = await steamAdapter.getCommunity(games);
+            setSteamNews(community.items);
+            if (community.failedAppIds.length > 0) {
+              newsMessage = `Community loaded with ${community.failedAppIds.length} unavailable game feed${community.failedAppIds.length === 1 ? '' : 's'}.`;
             }
+          } catch (error) {
+            newsMessage = error instanceof SteamAdapterError ? error.message : 'Steam news could not be loaded.';
+            setSteamNews([]);
           }
         } else {
           newsMessage = 'Steam connected, but no games were returned for this account.';

@@ -24,8 +24,20 @@ export interface SteamNewsItem {
   stale: boolean;
 }
 
+export interface SteamCommunityItem extends SteamNewsItem {
+  appId: number;
+  gameTitle: string;
+}
+
 export interface SteamNewsResult {
   items: SteamNewsItem[];
+  stale: boolean;
+  fetchedAt: number;
+}
+
+export interface SteamCommunityResult {
+  items: SteamCommunityItem[];
+  failedAppIds: number[];
   stale: boolean;
   fetchedAt: number;
 }
@@ -76,6 +88,52 @@ export function createSteamNewsLoader(options: NewsLoaderOptions) {
         if (cached?.value) return { ...cached.value, stale: true, items: cached.value.items.map((item) => ({ ...item, stale: true })) };
         throw new Error('Steam news is unavailable right now.');
       }
+    },
+  };
+}
+
+interface CommunityGameRef {
+  appId: number;
+  gameTitle: string;
+}
+
+export function createSteamCommunityLoader(options: NewsLoaderOptions) {
+  const now = options.now ?? Date.now;
+  const newsLoader = createSteamNewsLoader(options);
+  return {
+    async load(games: CommunityGameRef[]): Promise<SteamCommunityResult> {
+      const validGames = games.filter((game) => Number.isInteger(game.appId) && game.appId > 0 && game.gameTitle.trim());
+      const items: SteamCommunityItem[] = [];
+      const failedAppIds: number[] = [];
+      let stale = false;
+      for (let index = 0; index < validGames.length; index += 4) {
+        const batch = validGames.slice(index, index + 4);
+        const results = await Promise.all(batch.map(async (game) => {
+          try {
+            const result = await newsLoader.load(game.appId);
+            return { game, result };
+          } catch {
+            return { game, result: null };
+          }
+        }));
+        for (const { game, result } of results) {
+          if (!result) {
+            failedAppIds.push(game.appId);
+            stale = true;
+            continue;
+          }
+          stale = stale || result.stale;
+          items.push(...result.items.map((item) => ({ ...item, appId: game.appId, gameTitle: game.gameTitle })));
+        }
+      }
+      const unique = new Map<string, SteamCommunityItem>();
+      for (const item of items) if (!unique.has(item.id)) unique.set(item.id, item);
+      return {
+        items: [...unique.values()].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)),
+        failedAppIds,
+        stale,
+        fetchedAt: now(),
+      };
     },
   };
 }

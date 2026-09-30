@@ -1,9 +1,11 @@
 import type { ProviderId } from './provider';
+import { createDefaultProfile, normalizeProfile, type ProfileState } from './profile';
 
 // Tiny versioned storage abstraction. All local user state flows
 // through here — no scattered localStorage calls in components.
 
-const KEY = 'aevora:state:v1';
+const KEY = 'aevora:state:v2';
+const PREVIOUS_KEY = 'aevora:state:v1';
 const LEGACY_KEYS = ['aevora:prefs', 'aevora:favorites', 'aevora:lastPlayed', 'aevora:lastGame', 'aevora:lastNav'] as const;
 
 export interface PersistedPrefs {
@@ -18,7 +20,7 @@ export interface PersistedPrefs {
 }
 
 export interface PersistedState {
-  version: 1;
+  version: 2;
   favorites: string[];
   preferredProviders: Record<string, ProviderId>;
   lastSelectedGame: string;
@@ -26,10 +28,11 @@ export interface PersistedState {
   prefs: PersistedPrefs;
   /** session play history: game id -> timestamp */
   playHistory: Record<string, number>;
+  profile: ProfileState;
 }
 
 export const DEFAULT_STATE: PersistedState = {
-  version: 1,
+  version: 2,
   favorites: [],
   preferredProviders: {},
   lastSelectedGame: 'forza',
@@ -45,6 +48,7 @@ export const DEFAULT_STATE: PersistedState = {
     reduceMotion: false,
   },
   playHistory: {},
+  profile: createDefaultProfile(),
 };
 
 function safeParse(raw: string | null): unknown {
@@ -103,8 +107,14 @@ export function loadState(): PersistedState {
   let current: Partial<PersistedState> = {};
   try {
     const raw = safeParse(localStorage.getItem(KEY));
-    if (raw && typeof raw === 'object' && (raw as { version?: unknown }).version === 1) {
-      const r = raw as Partial<PersistedState>;
+    const previous = safeParse(localStorage.getItem(PREVIOUS_KEY));
+    const persisted = raw && typeof raw === 'object' && (raw as { version?: unknown }).version === 2
+      ? raw
+      : previous && typeof previous === 'object' && (previous as { version?: unknown }).version === 1
+        ? previous
+        : null;
+    if (persisted && typeof persisted === 'object') {
+      const r = persisted as Partial<PersistedState>;
       current = {
         favorites: asStringArray(r.favorites),
         preferredProviders: asRecord(r.preferredProviders) as Record<string, ProviderId>,
@@ -114,7 +124,11 @@ export function loadState(): PersistedState {
         playHistory: Object.fromEntries(
           Object.entries(asRecord(r.playHistory)).filter(([, v]) => typeof v === 'number')
         ) as Record<string, number>,
+        profile: normalizeProfile(r.profile),
       };
+      if (persisted === previous) {
+        try { localStorage.removeItem(PREVIOUS_KEY); } catch { /* ignore */ }
+      }
     } else {
       // first run against the new schema: import legacy keys once
       current = migrateLegacy();
@@ -136,7 +150,7 @@ export function loadState(): PersistedState {
 
 export function saveState(state: PersistedState): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ ...state, version: 1 }));
+    localStorage.setItem(KEY, JSON.stringify({ ...state, version: 2 }));
   } catch {
     /* storage unavailable — keep in-memory state */
   }

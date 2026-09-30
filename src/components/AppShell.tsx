@@ -22,6 +22,7 @@ import type { GameProviderEntry, ProviderId } from '../domain/provider';
 import { providerName } from '../domain/provider';
 import type { UnifiedGame } from '../domain/game';
 import { DEFAULT_STATE, loadState, saveState, type PersistedPrefs } from '../domain/storage';
+import { PROFILE_ITEMS, equipProfileItem, mergeAchievements, purchaseProfileItem, type ProfileState } from '../domain/profile';
 import { EASE } from '../motion/presets';
 import { libraryGames, setLibraryGames } from '../data/library';
 import type { CommunityItem } from '../data/navigation';
@@ -77,6 +78,8 @@ export default function AppShell() {
   const [steamStore, setSteamStore] = useState<SteamStoreCategories | null>(null);
   const [steamStoreLoading, setSteamStoreLoading] = useState(false);
   const [steamStoreError, setSteamStoreError] = useState<string | null>(null);
+  const [profileSyncing, setProfileSyncing] = useState(false);
+  const [profileSyncError, setProfileSyncError] = useState<string | null>(null);
   const nativeAvailable = useMemo(() => getDesktopBridge().isNative, []);
   const autoConnectAttempted = useRef(false);
 
@@ -177,6 +180,27 @@ export default function AppShell() {
   useEffect(() => {
     if (activeNav === 'Store') void loadSteamStore();
   }, [activeNav, loadSteamStore]);
+
+  const syncProfileAchievements = useCallback(async () => {
+    if (steamConnection.status !== 'connected' || activeLibrary.length === 0 || profileSyncing) return;
+    setProfileSyncing(true);
+    setProfileSyncError(null);
+    try {
+      const result = await steamAdapter.getAchievements(activeLibrary);
+      if (result.items.length > 0) {
+        setStore((state) => ({ ...state, profile: mergeAchievements(state.profile, result.items).profile }));
+      }
+      if (result.failedAppIds.length > 0) setProfileSyncError(`${result.failedAppIds.length} juegos no exponen sus logros.`);
+    } catch {
+      setProfileSyncError('Steam no devolvió los logros en este momento.');
+    } finally {
+      setProfileSyncing(false);
+    }
+  }, [activeLibrary, profileSyncing, steamAdapter, steamConnection.status]);
+
+  useEffect(() => {
+    if (overlay?.type === 'profile') void syncProfileAchievements();
+  }, [overlay?.type, syncProfileAchievements]);
 
   const saveSteamCredentials = useCallback(async (credentials: SteamCredentialsInput) => {
     await steamAdapter.saveCredentials(credentials);
@@ -322,6 +346,7 @@ export default function AppShell() {
             library={activeLibrary}
             favorites={safeFavorites}
             theme={prefs.theme}
+            profileName={store.profile.name}
             onCycleTheme={() =>
               setStore((s) => ({ ...s, prefs: { ...s.prefs, theme: s.prefs.theme === 'aevora' ? 'midnight' : 'aevora' } }))
             }
@@ -426,7 +451,19 @@ export default function AppShell() {
       />
       <ProfilePanel
         open={overlay?.type === 'profile'}
+        profile={store.profile}
+        achievements={store.profile.achievements}
+        items={PROFILE_ITEMS}
+        syncing={profileSyncing}
+        syncError={profileSyncError}
         favorites={safeFavorites}
+        onChange={(changes: Partial<ProfileState>) => setStore((state) => ({ ...state, profile: { ...state.profile, ...changes } }))}
+        onPurchase={(itemId) => setStore((state) => {
+          const result = purchaseProfileItem(state.profile, itemId);
+          notify(result.message);
+          return result.ok ? { ...state, profile: result.profile } : state;
+        })}
+        onEquip={(itemId) => setStore((state) => ({ ...state, profile: equipProfileItem(state.profile, itemId) }))}
         onSelectGame={(id) => {
           selectGame(id);
           changeNav('Home');

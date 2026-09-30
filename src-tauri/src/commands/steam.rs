@@ -149,6 +149,31 @@ pub struct SteamStoreCategories {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SteamAchievementItem {
+    #[serde(rename = "apiname")]
+    pub api_name: String,
+    #[serde(default)]
+    pub achieved: u8,
+    #[serde(default)]
+    pub unlocktime: i64,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct SteamPlayerStats {
+    #[serde(default)]
+    pub achievements: Vec<SteamAchievementItem>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SteamPlayerAchievementsResponse {
+    pub playerstats: SteamPlayerStats,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SteamConnectionResponse {
     pub status: &'static str,
     #[serde(rename = "steamId")]
@@ -531,6 +556,10 @@ pub fn parse_store_categories(payload: &str) -> Result<SteamStoreCategories, Str
     serde_json::from_str(payload).map_err(|_| "Steam returned invalid store data.".to_string())
 }
 
+pub fn parse_player_achievements(payload: &str) -> Result<SteamPlayerAchievementsResponse, String> {
+    serde_json::from_str(payload).map_err(|_| "Steam returned invalid achievement data.".to_string())
+}
+
 #[tauri::command]
 pub async fn steam_connect() -> Result<SteamConnectionResponse, String> {
     let credentials = load_credentials()?;
@@ -643,6 +672,30 @@ pub async fn steam_get_store_categories() -> Result<SteamStoreCategories, String
 }
 
 #[tauri::command]
+pub async fn steam_get_player_achievements(
+    app_id: u32,
+) -> Result<SteamPlayerAchievementsResponse, String> {
+    if app_id == 0 {
+        return Err("Steam AppID must be a positive number.".to_string());
+    }
+    let credentials = load_credentials()?;
+    let client = new_client()?;
+    let steam_id = resolve_steam_id(&client, &credentials.account, &credentials.api_key).await?;
+    get_json(
+        &client,
+        &format!("{STEAM_API}/ISteamUserStats/GetPlayerAchievements/v0001/"),
+        vec![
+            ("key", credentials.api_key),
+            ("steamid", steam_id),
+            ("appid", app_id.to_string()),
+            ("l", "english".to_string()),
+            ("format", "json".to_string()),
+        ],
+    )
+    .await
+}
+
+#[tauri::command]
 pub fn steam_disconnect() {}
 
 #[cfg(test)]
@@ -650,7 +703,7 @@ mod tests {
     use super::{
         merge_local_games, normalize_steam_account, parse_app_details, parse_library_folder_paths,
         parse_manifest_install_dir, parse_manifest_name, parse_news, parse_owned_games,
-        parse_store_categories,
+        parse_player_achievements, parse_store_categories,
         LocalSteamGame, SteamOwnedGame,
     };
     use std::collections::HashMap;
@@ -704,6 +757,14 @@ mod tests {
         let categories = parse_store_categories(payload).unwrap();
         assert_eq!(categories.specials.items[0].id, Some(440));
         assert_eq!(categories.specials.items[0].discount_percent, Some(75));
+    }
+
+    #[test]
+    fn parses_player_achievements_with_optional_display_fields() {
+        let payload = r#"{"playerstats":{"achievements":[{"apiname":"first","achieved":1,"unlocktime":1700000000,"name":"First"}]}}"#;
+        let response = parse_player_achievements(payload).unwrap();
+        assert_eq!(response.playerstats.achievements[0].api_name, "first");
+        assert_eq!(response.playerstats.achievements[0].achieved, 1);
     }
 
     #[test]

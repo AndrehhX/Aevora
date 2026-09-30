@@ -19,6 +19,7 @@ function clientWith(overrides: Partial<SteamClient> = {}): SteamClient {
     getAppDetails: async () => ({ appid: 570, name: 'Dota 2', type: 'game', is_free: true }),
     getNews: async () => ({ appnews: { newsitems: [] } }),
     getStoreCategories: async () => ({ featured_win: { items: [] }, top_sellers: { items: [] }, specials: { items: [] } }),
+    getPlayerAchievements: async () => ({ playerstats: { achievements: [] } }),
     disconnect: async () => undefined,
     ...overrides,
   };

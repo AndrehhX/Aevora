@@ -15,6 +15,7 @@ export default function TopNavigation({
   library,
   favorites,
   theme,
+  profileName,
   onCycleTheme,
   onSelectGame,
   onOpenSettings,
@@ -29,6 +30,7 @@ export default function TopNavigation({
   library: UnifiedGame[];
   favorites: string[];
   theme: 'aevora' | 'midnight';
+  profileName: string;
   onCycleTheme: () => void;
   onSelectGame: (id: string) => void;
   onOpenSettings: () => void;
@@ -133,7 +135,7 @@ export default function TopNavigation({
               aria-expanded={profileOpen}
               className="text-[11px] font-medium text-[#D9C6EA]/80 transition-colors hover:text-[#F1EAF8]"
             >
-              Neo Aura
+              {profileName || 'Profile'}
             </button>
             <Tooltip label="Settings">
               <motion.button

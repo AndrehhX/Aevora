@@ -14,6 +14,7 @@ pub fn run() {
             commands::steam::steam_get_app_details,
             commands::steam::steam_get_news,
             commands::steam::steam_get_store_categories,
+            commands::steam::steam_get_player_achievements,
             commands::steam::steam_disconnect,
         ])
         .run(tauri::generate_context!())

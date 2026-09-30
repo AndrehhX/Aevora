@@ -5,6 +5,7 @@ import { createSteamClient } from './steamClient';
 import { resolveSteamAssets } from './steamAssets';
 import { createSteamCommunityLoader, createSteamNewsLoader, type SteamCommunityResult, type SteamNewsResult } from './steamNews';
 import { createSteamStoreLoader, type SteamStoreCategories } from './steamStore';
+import { createSteamAchievementsLoader, type SteamAchievement } from './steamAchievements';
 import { createSteamCredentialClient, type SteamCredentialClient, type SteamCredentialsInput } from './steamCredentials';
 
 export type ConnectionState =
@@ -31,6 +32,7 @@ export interface SteamAdapter {
   getAppDetails(appId: number): Promise<SteamAppDetails>;
   getNews(appId: number): Promise<SteamNewsResult>;
   getCommunity(games: UnifiedGame[]): Promise<SteamCommunityResult>;
+  getAchievements(games: UnifiedGame[]): Promise<{ items: SteamAchievement[]; failedAppIds: number[]; stale: boolean }>;
   getStore(): Promise<SteamStoreCategories>;
   getConnection(): ConnectionState;
 }
@@ -121,6 +123,7 @@ export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
   const ttlMs = options.libraryTtlMs ?? LIBRARY_TTL_MS;
   const newsLoader = createSteamNewsLoader({ client, cache: options.cache, now });
   const communityLoader = createSteamCommunityLoader({ client, cache: options.cache, now });
+  const achievementsLoader = createSteamAchievementsLoader({ client, cache: options.cache, now });
   const storeLoader = createSteamStoreLoader({ client, cache: options.cache, now });
   let connection: ConnectionState = { status: 'disconnected' };
 
@@ -198,6 +201,33 @@ export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
         return appId > 0 ? [{ appId, gameTitle: game.title }] : [];
       });
       return communityLoader.load(refs);
+    },
+    async getAchievements(games) {
+      const refs = games.flatMap((game) => {
+        const steam = game.providers.find((entry) => entry.provider === 'steam');
+        const appId = steam ? Number(steam.externalId) : 0;
+        return appId > 0 ? [appId] : [];
+      });
+      const items: SteamAchievement[] = [];
+      const failedAppIds: number[] = [];
+      let stale = false;
+      for (let index = 0; index < refs.length; index += 4) {
+        const batch = refs.slice(index, index + 4);
+        const results = await Promise.all(batch.map(async (appId) => {
+          try {
+            return await achievementsLoader.load(appId);
+          } catch {
+            failedAppIds.push(appId);
+            return null;
+          }
+        }));
+        for (const result of results) {
+          if (!result) continue;
+          stale = stale || result.stale;
+          items.push(...result.items);
+        }
+      }
+      return { items, failedAppIds, stale };
     },
     async getStore() {
       try {

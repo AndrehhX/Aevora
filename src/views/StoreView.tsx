@@ -23,6 +23,7 @@ function OfferCard({ offer, selected, onOpen }: { offer: SteamStoreOffer; select
         <SmartImage
           src={offer.headerImage ?? offer.capsuleImage ?? ''}
           fallback={offer.capsuleImage ?? offer.headerImage ?? ''}
+          fallback2={offer.headerImage ?? undefined}
           alt={offer.name}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04] group-hover:brightness-110"
         />

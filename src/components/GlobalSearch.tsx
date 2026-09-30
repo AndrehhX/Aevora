@@ -72,7 +72,7 @@ export default function GlobalSearch({
   const firstProvider = (g: UnifiedGame): ProviderId | undefined => g.providers.find((p) => p.owned)?.provider;
 
   return (
-    <div ref={ref} className="relative w-[min(400px,42%)]">
+    <div ref={ref} className="relative w-[min(400px,42%)] min-w-[220px] max-w-full">
       <motion.div
         animate={{
           scale: focused ? 1.02 : 1,
@@ -194,7 +194,7 @@ export default function GlobalSearch({
                 >
                   <span className="h-[36px] w-[28px] shrink-0 overflow-hidden rounded-[6px] bg-[rgba(74,53,96,0.25)]">
                     {r.artwork.cover ? (
-                      <SmartImage src={r.artwork.cover} fallback={r.artwork.coverFallback} alt={r.title} className="h-full w-full object-cover" />
+                      <SmartImage src={r.artwork.cover} fallback={r.artwork.coverFallback} fallback2={r.artwork.coverFallback2} alt={r.title} className="h-full w-full object-cover" />
                     ) : (
                       <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#4A3560] to-[#8263A1] text-[12px] font-bold text-white">P</span>
                     )}

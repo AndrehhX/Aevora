@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { getImageCandidates } from './imageSources';
 
 export function SmartImage({
   src,
@@ -17,14 +18,15 @@ export function SmartImage({
   style?: React.CSSProperties;
   loading?: 'eager' | 'lazy';
 }) {
-  const [failed, setFailed] = useState<'primary' | 'fallback' | 'fallback2' | 'placeholder'>('primary');
+  const candidates = useMemo(() => getImageCandidates(src, fallback, fallback2), [src, fallback, fallback2]);
+  const [candidateIndex, setCandidateIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    setFailed(src ? 'primary' : fallback ? 'fallback' : fallback2 ? 'fallback2' : 'placeholder');
+    setCandidateIndex(0);
     setLoaded(false);
-  }, [src, fallback, fallback2]);
+  }, [candidates]);
 
-  if (failed === 'placeholder' || (!src && !fallback && !fallback2)) {
+  if (candidateIndex >= candidates.length) {
     return (
       <div
         className={className}
@@ -45,7 +47,7 @@ export function SmartImage({
       </div>
     );
   }
-  const activeSrc = failed === 'fallback' ? fallback : failed === 'fallback2' ? fallback2 : src;
+  const activeSrc = candidates[candidateIndex];
   return (
     <img
       src={activeSrc}
@@ -54,9 +56,8 @@ export function SmartImage({
       loading={loading}
       decoding="async"
       onError={() => {
-        if (failed === 'primary' && fallback && fallback !== src) setFailed('fallback');
-        else if (fallback2 && fallback2 !== src && fallback2 !== fallback) setFailed('fallback2');
-        else setFailed('placeholder');
+        setLoaded(false);
+        setCandidateIndex((current) => current + 1);
       }}
       onLoad={() => setLoaded(true)}
       className={className}

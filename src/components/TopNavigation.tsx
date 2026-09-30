@@ -58,7 +58,8 @@ export default function TopNavigation({
       initial={{ opacity: 0, y: -14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="relative z-30 flex flex-col items-center"
+      data-testid="aevora-layout-top-navigation"
+      className="relative z-30 flex min-w-0 flex-col items-center"
     >
       <GlobalSearch library={library} favorites={favorites} value={globalQuery} onChange={setGlobalQuery} onSelect={onSelectGame} />
 

@@ -31,7 +31,8 @@ export default function Sidebar({
       initial={{ opacity: 0, x: -24 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      className={`relative flex h-full shrink-0 flex-col gap-3 rounded-[18px] border border-[rgba(217,198,234,0.10)] bg-[rgba(23,16,31,0.72)] p-2.5 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-2xl transition-[width] duration-200 ease-out ${
+      data-aevora-layout="sidebar"
+      className={`relative flex h-full min-w-0 shrink-0 flex-col gap-3 rounded-[18px] border border-[rgba(217,198,234,0.10)] bg-[rgba(23,16,31,0.72)] p-2.5 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-2xl transition-[width] duration-200 ease-out ${
         collapsed ? 'w-[64px]' : 'w-[176px] lg:w-[198px] xl:w-[210px]'
       }`}
     >

@@ -336,7 +336,7 @@ export default function AppShell() {
           onToggleCollapse={() => setStore((s) => ({ ...s, prefs: { ...s.prefs, sidebarCollapsed: !s.prefs.sidebarCollapsed } }))}
         />
 
-        <main className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden">
+        <main data-aevora-layout="content" className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden">
           <TopNavigation
             activeNav={activeNav}
             setActiveNav={changeNav}

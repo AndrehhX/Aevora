@@ -68,12 +68,14 @@ export default function StoreView({
   loading,
   error,
   onOpenStore,
+  onRetry,
 }: {
   offers: SteamStoreCategories | null;
   selectedAppId: number | null;
   loading: boolean;
   error?: string | null;
   onOpenStore: (offer: SteamStoreOffer) => void;
+  onRetry?: () => void;
 }) {
   const count = offers ? offers.featured.length + offers.topSellers.length + offers.specials.length : 0;
   return (
@@ -91,7 +93,10 @@ export default function StoreView({
         </div>
       )}
       {error && !loading && (
-        <div className="rounded-[14px] border border-[rgba(216,185,120,0.22)] bg-[rgba(216,185,120,0.08)] px-4 py-5 text-[11.5px] leading-relaxed text-[#E4C98E]">{error}</div>
+        <div className="flex items-center justify-between gap-3 rounded-[14px] border border-[rgba(216,185,120,0.22)] bg-[rgba(216,185,120,0.08)] px-4 py-5 text-[11.5px] leading-relaxed text-[#E4C98E]">
+          <span>{error}</span>
+          {onRetry ? <button type="button" onClick={onRetry} className="shrink-0 rounded-full border border-[rgba(228,201,142,0.35)] px-3 py-1.5 text-[10px] font-semibold text-[#E4C98E] transition-colors hover:bg-[rgba(228,201,142,0.12)]" aria-label="Retry">Retry</button> : null}
+        </div>
       )}
       {!loading && !error && count === 0 && (
         <div className="rounded-[14px] border border-dashed border-[rgba(217,198,234,0.16)] px-4 py-7 text-[11.5px] leading-relaxed text-[#BEA0D8]/70">

@@ -8,7 +8,7 @@ Aevora is a desktop-first game launcher built around one unified library. The in
 - Framer Motion for restrained interface motion
 - Vitest and Testing Library for verification
 - Tauri 2 and Rust for desktop commands
-- Steam adapter contracts for library, artwork, news and launch flows
+- Steam adapter contracts for library, artwork, store offers, community news, achievements and launch flows
 
 ## Requirements on Windows
 
@@ -60,7 +60,11 @@ Generated Rust output under `src-tauri/target` and generated Tauri schemas under
 
 The frontend never asks for a Steam password and never embeds a secret. From the desktop Settings panel, each user can enter a SteamID64 or vanity identifier plus their own Steam Web API key. The key is sent once to the local Tauri command and stored in Windows Credential Manager; all later Steam requests read it from there. Browser preview disables this form because it cannot provide the same local boundary.
 
-The native adapter resolves the account, validates the profile, loads owned games through `IPlayerService/GetOwnedGames`, reads public app details for artwork and logos, and loads current news through `ISteamNews/GetNewsForApp`. Steam launch and store actions go through typed Tauri commands; the UI only reports `Playing` after the native command reports success. Private profiles and unavailable APIs are reported honestly.
+The native adapter resolves the account, validates the profile, loads owned games through `IPlayerService/GetOwnedGames`, reads public app details for artwork and logos, loads current news through `ISteamNews/GetNewsForApp`, reads public Store categories, and requests exposed player achievements. Steam launch and store actions go through typed Tauri commands; the UI only reports `Playing` after the native command reports success. Private profiles and unavailable APIs are reported honestly.
+
+Store offers are public Steam Store data, not account-specific recommendations. Community combines public Steam News feeds for every linked game, deduplicates them and keeps successful feeds when another game is unavailable. Steam's public APIs do not expose a complete copy of every discussion post in every Community hub.
+
+The profile panel is intentionally local to the PC: display name, bio, points, unlocked achievements and cosmetic items are stored in the versioned local state. Points are awarded locally for newly observed unlocked achievements, and the profile shop contains only local frames, backgrounds, badges and titles. It does not modify Steam Wallet, inventory or account profile data.
 
 For local setup, create a Steam Web API key at [Steam Web API Key](https://steamcommunity.com/dev/apikey), open the desktop Settings panel, save the SteamID/vanity identifier and key, then choose Connect. Never commit the key, put it in a `VITE_*` variable, or paste it into an issue.
 
@@ -85,6 +89,9 @@ docs/                        architecture and provider notes
 - [x] Steam launch and store commands are distinct.
 - [x] Steam credentials use Windows Credential Manager instead of browser storage.
 - [x] Owned games, Steam artwork/logos and public news use live provider responses.
+- [x] Store rows use live public Steam offers with real prices and discount labels.
+- [x] Community combines public news from all linked Steam games with partial-failure handling.
+- [x] Profile identity, achievement points and cosmetic shop persist locally.
 - [x] Keyboard Escape, focus, reduced-motion and coarse-pointer behavior are tested.
 - [x] `npm run check` passes.
 - [x] `cargo check --manifest-path src-tauri/Cargo.toml` passes on Windows.

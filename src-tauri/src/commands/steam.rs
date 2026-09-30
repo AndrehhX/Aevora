@@ -693,6 +693,11 @@ pub async fn steam_get_player_achievements(
         ],
     )
     .await
+    .and_then(|payload: SteamPlayerAchievementsResponse| {
+        serde_json::to_string(&payload)
+            .map_err(|_| "Steam returned invalid achievement data.".to_string())
+            .and_then(|json| parse_player_achievements(&json))
+    })
 }
 
 #[tauri::command]

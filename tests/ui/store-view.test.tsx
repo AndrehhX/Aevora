@@ -27,4 +27,11 @@ describe('StoreView', () => {
     render(<StoreView offers={{ featured: [], topSellers: [], specials: [], stale: false }} selectedAppId={null} loading={false} onOpenStore={() => undefined} />);
     expect(screen.getByText(/Steam no devolvió ofertas/i)).toBeTruthy();
   });
+
+  it('offers a retry action after a live store failure', () => {
+    const onRetry = vi.fn();
+    render(<StoreView offers={null} selectedAppId={null} loading={false} error="Steam store offers are unavailable right now." onOpenStore={() => undefined} onRetry={onRetry} />);
+    screen.getByRole('button', { name: /Retry/i }).click();
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
 });

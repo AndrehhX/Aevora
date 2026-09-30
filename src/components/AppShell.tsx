@@ -34,6 +34,7 @@ import type { SteamStoreCategories, SteamStoreOffer } from '../integrations/stea
 import { launchGame, openStore, type LaunchResult } from '../integrations/steam/steamLaunch';
 import { getDesktopBridge } from '../integrations/desktop/bridge';
 import type { SteamCredentialsInput } from '../integrations/steam/steamCredentials';
+import { useProfileSyncGate } from '../hooks/useProfileSyncGate';
 
 type Overlay =
   | { type: 'game'; id: string }
@@ -198,9 +199,7 @@ export default function AppShell() {
     }
   }, [activeLibrary, profileSyncing, steamAdapter, steamConnection.status]);
 
-  useEffect(() => {
-    if (overlay?.type === 'profile') void syncProfileAchievements();
-  }, [overlay?.type, syncProfileAchievements]);
+  useProfileSyncGate(overlay?.type === 'profile', syncProfileAchievements);
 
   const saveSteamCredentials = useCallback(async (credentials: SteamCredentialsInput) => {
     await steamAdapter.saveCredentials(credentials);
@@ -398,6 +397,7 @@ export default function AppShell() {
                     selectedAppId={selectedGame?.providers.find((entry) => entry.provider === 'steam')?.externalId ? Number(selectedGame.providers.find((entry) => entry.provider === 'steam')?.externalId) : null}
                     loading={steamStoreLoading}
                     error={steamStoreError}
+                    onRetry={loadSteamStore}
                     onOpenStore={(offer: SteamStoreOffer) => {
                       const entry: GameProviderEntry = { provider: 'steam', externalId: String(offer.appId), owned: false, installed: false };
                       void handleInstall({ id: `steam:${offer.appId}`, title: offer.name, artwork: { cover: offer.capsuleImage ?? offer.headerImage ?? '', coverFallback: offer.headerImage ?? offer.capsuleImage ?? '', hero: offer.headerImage ?? offer.capsuleImage ?? '', heroFallback: offer.capsuleImage ?? offer.headerImage ?? '' }, providers: [entry] }, entry);

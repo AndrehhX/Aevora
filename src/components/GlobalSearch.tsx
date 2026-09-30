@@ -72,7 +72,7 @@ export default function GlobalSearch({
   const firstProvider = (g: UnifiedGame): ProviderId | undefined => g.providers.find((p) => p.owned)?.provider;
 
   return (
-    <div ref={ref} className="relative w-[min(400px,42%)] min-w-[220px] max-w-full">
+    <div ref={ref} className="relative w-[min(400px,42%)] min-w-[190px] max-w-full">
       <motion.div
         animate={{
           scale: focused ? 1.02 : 1,

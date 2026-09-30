@@ -326,11 +326,11 @@ export default function AppShell() {
   const providerOverlay = overlay?.type === 'provider' ? activeLibrary.find((game) => game.id === overlay.id) ?? null : null;
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden" style={{ background: BACKGROUNDS[prefs.theme] }}>
+    <div data-aevora-app data-aevora-reduced={prefs.reduceMotion ? 'true' : 'false'} className="relative h-screen w-screen overflow-hidden" style={{ background: BACKGROUNDS[prefs.theme] }}>
       {/* film grain / vignette */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_10%,transparent_55%,rgba(0,0,0,0.45)_100%)]" />
 
-      <div className="relative z-10 flex h-full w-full gap-3 p-3">
+      <div className="aevora-frame relative z-10 flex h-full w-full gap-3 p-3">
         <Sidebar
           libraryQuery={libraryQuery}
           setLibraryQuery={setLibraryQuery}

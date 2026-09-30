@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
 import { ExternalLink, LoaderCircle, Tag } from 'lucide-react';
 import type { SteamStoreCategories, SteamStoreOffer } from '../integrations/steam/steamStore';
-import { EASE } from '../motion/presets';
 import { SmartImage } from '../components/SmartImage';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { reducedMotionTransition } from '../motion/presets';
 
 function OfferCard({ offer, selected, onOpen }: { offer: SteamStoreOffer; selected: boolean; onOpen: (offer: SteamStoreOffer) => void }) {
   return (
@@ -12,14 +13,14 @@ function OfferCard({ offer, selected, onOpen }: { offer: SteamStoreOffer; select
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.985 }}
       onClick={() => onOpen(offer)}
-      className={`group relative w-[clamp(180px,18vw,250px)] shrink-0 overflow-hidden rounded-[14px] border text-left transition-[border-color,box-shadow] duration-200 ${
+      className={`group relative w-[clamp(196px,22vw,282px)] shrink-0 overflow-hidden rounded-[16px] border text-left transition-[border-color,box-shadow] duration-200 ${
         selected
           ? 'border-[#A07CC1]/65 shadow-[0_18px_42px_-20px_rgba(190,160,216,0.7)]'
           : 'border-[rgba(217,198,234,0.12)] hover:border-[rgba(190,160,216,0.45)] hover:shadow-[0_18px_42px_-20px_rgba(190,160,216,0.55)]'
       }`}
       data-cursor="interactive"
     >
-      <div className="relative aspect-[460/215] overflow-hidden bg-[#17101F]">
+      <div className="relative aspect-[16/8] overflow-hidden bg-[#17101F]">
         <SmartImage
           src={offer.headerImage ?? offer.capsuleImage ?? ''}
           fallback={offer.capsuleImage ?? offer.headerImage ?? ''}
@@ -34,7 +35,7 @@ function OfferCard({ offer, selected, onOpen }: { offer: SteamStoreOffer; select
           </span>
         ) : null}
       </div>
-      <div className="flex min-h-[76px] flex-col justify-between bg-[rgba(33,22,46,0.92)] px-3 py-2.5">
+      <div className="flex min-h-[82px] flex-col justify-between bg-[rgba(33,22,46,0.92)] px-3 py-2.5">
         <span className="line-clamp-1 text-[12px] font-semibold text-[#F1EAF8]">{offer.name}</span>
         <span className="mt-2 flex items-center justify-between gap-2 text-[10px] text-[#BEA0D8]/75">
           <span className="flex min-w-0 items-center gap-1.5">
@@ -52,9 +53,9 @@ function OfferCard({ offer, selected, onOpen }: { offer: SteamStoreOffer; select
 function OfferRow({ title, offers, selectedAppId, onOpen }: { title: string; offers: SteamStoreOffer[]; selectedAppId: number | null; onOpen: (offer: SteamStoreOffer) => void }) {
   if (offers.length === 0) return null;
   return (
-    <section>
+    <section data-store-row={title.toLowerCase().replace(/\s+/g, '-')}>
       <h3 className="mb-2 px-0.5 text-[12.5px] font-semibold text-[#F1EAF8]/90">{title}</h3>
-      <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+      <div className="no-scrollbar flex min-w-0 gap-3 overflow-x-auto pb-1 pr-1" style={{ scrollbarWidth: 'none' }}>
         {offers.map((offer) => (
           <OfferCard key={`${offer.category}:${offer.appId}`} offer={offer} selected={offer.appId === selectedAppId} onOpen={onOpen} />
         ))}
@@ -79,8 +80,9 @@ export default function StoreView({
   onRetry?: () => void;
 }) {
   const count = offers ? offers.featured.length + offers.topSellers.length + offers.specials.length : 0;
+  const reduced = usePrefersReducedMotion();
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE.out }} className="flex flex-col gap-4">
+    <motion.div data-testid="store-view" data-aevora-layout="store" initial={{ opacity: 0, y: reduced ? 0 : 10 }} animate={{ opacity: 1, y: 0 }} transition={reducedMotionTransition(reduced)} className="flex min-w-0 flex-col gap-4">
       <div className="flex items-end justify-between gap-3">
         <div>
           <h2 className="text-[17px] font-bold text-[#F1EAF8]">Steam Store</h2>
@@ -89,18 +91,18 @@ export default function StoreView({
         {offers?.stale ? <span className="text-[10px] text-[#D8B978]">Showing cached offers</span> : null}
       </div>
       {loading && (
-        <div className="flex items-center gap-2 rounded-[14px] border border-[rgba(217,198,234,0.12)] px-4 py-6 text-[11.5px] text-[#BEA0D8]/70">
+        <div data-testid="store-state-loading" className="flex min-h-[118px] items-center gap-2 rounded-[16px] border border-[rgba(217,198,234,0.12)] bg-[rgba(23,16,31,0.48)] px-4 py-6 text-[11.5px] text-[#BEA0D8]/70">
           <LoaderCircle size={15} className="animate-spin" /> Loading Steam offers…
         </div>
       )}
       {error && !loading && (
-        <div className="flex items-center justify-between gap-3 rounded-[14px] border border-[rgba(216,185,120,0.22)] bg-[rgba(216,185,120,0.08)] px-4 py-5 text-[11.5px] leading-relaxed text-[#E4C98E]">
+        <div data-testid="store-state-error" className="flex min-h-[118px] items-center justify-between gap-3 rounded-[16px] border border-[rgba(216,185,120,0.22)] bg-[rgba(216,185,120,0.08)] px-4 py-5 text-[11.5px] leading-relaxed text-[#E4C98E]">
           <span>{error}</span>
           {onRetry ? <button type="button" onClick={onRetry} className="shrink-0 rounded-full border border-[rgba(228,201,142,0.35)] px-3 py-1.5 text-[10px] font-semibold text-[#E4C98E] transition-colors hover:bg-[rgba(228,201,142,0.12)]" aria-label="Retry">Retry</button> : null}
         </div>
       )}
       {!loading && !error && count === 0 && (
-        <div className="rounded-[14px] border border-dashed border-[rgba(217,198,234,0.16)] px-4 py-7 text-[11.5px] leading-relaxed text-[#BEA0D8]/70">
+        <div data-testid="store-state-empty" className="flex min-h-[118px] items-center rounded-[16px] border border-dashed border-[rgba(217,198,234,0.16)] bg-[rgba(23,16,31,0.38)] px-4 py-7 text-[11.5px] leading-relaxed text-[#BEA0D8]/70">
           Steam no devolvió ofertas en este momento. Intenta actualizar más tarde.
         </div>
       )}

@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Modal from '../../src/components/Modal';
 import CustomCursor from '../../src/components/CustomCursor';
+import { reducedMotionTransition } from '../../src/motion/presets';
 
 function setMedia(pointer: 'fine' | 'coarse', reduced: boolean) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -50,5 +51,17 @@ describe('accessibility and motion boundaries', () => {
     const { container } = render(<CustomCursor enabled />);
 
     expect(container.querySelector('[aria-hidden="true"]')).toBeNull();
+  });
+
+  it('uses an immediate transition contract when reduced motion is enabled', () => {
+    expect(reducedMotionTransition(true).duration).toBe(0);
+    expect(reducedMotionTransition(false).duration).toBeGreaterThan(0);
+  });
+
+  it('does not crash when the host has no matchMedia implementation', () => {
+    const previous = window.matchMedia;
+    Object.defineProperty(window, 'matchMedia', { configurable: true, value: undefined });
+    expect(() => render(<CustomCursor enabled />)).not.toThrow();
+    Object.defineProperty(window, 'matchMedia', { configurable: true, value: previous });
   });
 });

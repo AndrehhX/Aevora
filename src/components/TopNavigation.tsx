@@ -59,13 +59,13 @@ export default function TopNavigation({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       data-testid="aevora-layout-top-navigation"
-      className="relative z-30 flex min-w-0 flex-col items-center"
+      className="relative z-30 flex w-full min-w-0 flex-col items-center"
     >
       <GlobalSearch library={library} favorites={favorites} value={globalQuery} onChange={setGlobalQuery} onSelect={onSelectGame} />
 
       {/* nav row */}
-      <div className="mt-2 flex w-full items-center justify-between">
-        <nav aria-label="Sections" className="flex items-center gap-6 pl-2">
+      <div className="mt-2 flex w-full min-w-0 items-center justify-between gap-3">
+        <nav aria-label="Sections" className="no-scrollbar flex min-w-0 flex-1 items-center gap-4 overflow-x-auto pl-2 sm:gap-6">
           {navItems.map((item) => {
             const active = item === activeNav;
             return (
@@ -92,7 +92,7 @@ export default function TopNavigation({
           })}
         </nav>
 
-        <div className="flex items-center gap-2.5 pr-1">
+        <div className="flex shrink-0 items-center gap-2.5 pr-1">
           <div className="relative">
             <Tooltip label="Social">
               <motion.button

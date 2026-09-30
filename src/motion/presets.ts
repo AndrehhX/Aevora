@@ -20,3 +20,7 @@ export const SPRING = {
 
 export const HERO_CROSSFADE = 0.45;
 export const CARD_STAGGER = 0.035;
+
+export function reducedMotionTransition(reduced: boolean) {
+  return reduced ? { duration: 0 } : { duration: DURATION.fast, ease: EASE.out };
+}

@@ -14,8 +14,9 @@ export default function CustomCursor({ enabled: enabledProp = true }: { enabled?
   const ringY = useSpring(y, { stiffness: 260, damping: 28, mass: 0.6 });
 
   useEffect(() => {
-    const finePointer = window.matchMedia('(pointer: fine)').matches;
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const matchMedia = typeof window.matchMedia === 'function' ? window.matchMedia.bind(window) : null;
+    const finePointer = matchMedia?.('(pointer: fine)').matches ?? false;
+    const reducedMotion = matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     document.documentElement.dataset.aevoraCursor = enabledProp && finePointer && !reducedMotion ? 'on' : 'off';
     if (!enabledProp) {
       setEnabled(false);
@@ -58,8 +59,6 @@ export default function CustomCursor({ enabled: enabledProp = true }: { enabled?
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mousedown', onDown);
       window.removeEventListener('mouseup', onUp);
-    };
-    return () => {
       document.documentElement.dataset.aevoraCursor = 'off';
     };
   }, [x, y, enabledProp]);

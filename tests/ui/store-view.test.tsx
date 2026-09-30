@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import StoreView from '../../src/views/StoreView';
 import type { SteamStoreCategories } from '../../src/integrations/steam/steamStore';
 
@@ -12,6 +12,20 @@ const offers: SteamStoreCategories = {
 };
 
 describe('StoreView', () => {
+  afterEach(() => cleanup());
+
+  it('keeps loading, empty and error states inside one stable surface', () => {
+    const { rerender } = render(<StoreView offers={null} selectedAppId={null} loading onOpenStore={() => undefined} />);
+    expect(screen.getByTestId('store-view')).toBeTruthy();
+    expect(screen.getByTestId('store-state-loading')).toBeTruthy();
+
+    rerender(<StoreView offers={null} selectedAppId={null} loading={false} error="Unavailable" onOpenStore={() => undefined} />);
+    expect(screen.getByTestId('store-state-error')).toBeTruthy();
+
+    rerender(<StoreView offers={{ featured: [], topSellers: [], specials: [], stale: false }} selectedAppId={null} loading={false} onOpenStore={() => undefined} />);
+    expect(screen.getByTestId('store-state-empty')).toBeTruthy();
+  });
+
   it('renders real offer rows and sends the Steam store URL on selection', () => {
     const onOpenStore = vi.fn();
     render(<StoreView offers={offers} selectedAppId={730} loading={false} onOpenStore={onOpenStore} />);

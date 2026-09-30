@@ -4,6 +4,7 @@ import {
   PROFILE_ITEMS,
   createDefaultProfile,
   mergeAchievements,
+  normalizeProfile,
   purchaseProfileItem,
   type ProfileAchievement,
 } from '../../src/domain/profile';
@@ -51,5 +52,15 @@ describe('local profile economy', () => {
 
     expect(result.ok).toBe(false);
     expect(result.profile).toEqual(profile);
+  });
+
+  it('drops invalid equipped item ids when loading an older local profile', () => {
+    const normalized = normalizeProfile({
+      ...createDefaultProfile(),
+      unlockedItems: ['frame-lilac'],
+      equipped: { frame: 'removed-item', badge: 'frame-lilac' },
+    });
+
+    expect(normalized.equipped).toEqual({});
   });
 });

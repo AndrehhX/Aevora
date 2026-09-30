@@ -99,6 +99,14 @@ export function normalizeProfile(value: unknown): ProfileState {
     ? input.achievements.filter((item): item is ProfileAchievement => typeof item === 'object' && item !== null && Number.isInteger((item as ProfileAchievement).appId) && typeof (item as ProfileAchievement).apiName === 'string' && typeof (item as ProfileAchievement).name === 'string')
     : [];
   const unlockedItems = Array.isArray(input.unlockedItems) ? input.unlockedItems.filter((id): id is string => typeof id === 'string' && PROFILE_ITEMS.some((item) => item.id === id)) : [];
+  const ownedItems = new Set(unlockedItems);
+  const equipped: Partial<Record<ProfileItemKind, string>> = {};
+  if (typeof input.equipped === 'object' && input.equipped !== null) {
+    const rawEquipped = input.equipped as Partial<Record<ProfileItemKind, unknown>>;
+    for (const item of PROFILE_ITEMS) {
+      if (rawEquipped[item.kind] === item.id && ownedItems.has(item.id)) equipped[item.kind] = item.id;
+    }
+  }
   return {
     name: typeof input.name === 'string' && input.name.trim() ? input.name.trim().slice(0, 32) : DEFAULT_PROFILE.name,
     bio: typeof input.bio === 'string' ? input.bio.slice(0, 160) : DEFAULT_PROFILE.bio,
@@ -107,6 +115,6 @@ export function normalizeProfile(value: unknown): ProfileState {
     totalEarned: typeof input.totalEarned === 'number' && Number.isFinite(input.totalEarned) && input.totalEarned >= 0 ? Math.floor(input.totalEarned) : 0,
     achievements,
     unlockedItems: [...new Set(unlockedItems)],
-    equipped: typeof input.equipped === 'object' && input.equipped !== null ? input.equipped : {},
+    equipped,
   };
 }

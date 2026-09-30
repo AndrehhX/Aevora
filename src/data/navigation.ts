@@ -10,4 +10,4 @@ export interface CommunityItem {
   url?: string;
 }
 
-export const navItems = ['Home', 'Store', 'Community', 'Indies', 'Release'];
+export const navItems = ['Home', 'Store', 'Community', 'Indies', 'Release', 'Profile'];

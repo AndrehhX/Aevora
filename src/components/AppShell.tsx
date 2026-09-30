@@ -8,13 +8,14 @@ import ToastHost, { type ToastData } from './Toast';
 import CustomCursor from './CustomCursor';
 import GameDetails from './GameDetails';
 import SettingsPanel from './SettingsPanel';
-import ProfilePanel from './ProfilePanel';
+import PublicProfileView from './PublicProfileView';
 import CommunityPreview from './CommunityPreview';
 import SignOutDialog from './SignOutDialog';
 import ProviderSelector from './ProviderSelector';
 import LibraryEmptyState from './LibraryEmptyState';
 import HomeOverview from './HomeOverview';
 import StoreView from '../views/StoreView';
+import ProfileStoreView from '../views/ProfileStoreView';
 import CommunityView from '../views/CommunityView';
 import { EarlyView, IndiesView } from '../views/Collections';
 import { getOwnedGames } from '../domain/library';
@@ -40,7 +41,6 @@ type Overlay =
   | { type: 'game'; id: string }
   | { type: 'provider'; id: string; mode: 'play' | 'install' }
   | { type: 'settings' }
-  | { type: 'profile' }
   | { type: 'community'; item: CommunityItem }
   | { type: 'signout' };
 
@@ -69,6 +69,8 @@ export default function AppShell() {
   const [activeNav, setActiveNav] = useState(() =>
     store.prefs.startOnHome ? 'Home' : VALID_NAV.has(store.lastNav) ? store.lastNav : 'Home'
   );
+  const [profileMode, setProfileMode] = useState<'owner' | 'visitor'>('owner');
+  const [profileSection, setProfileSection] = useState<'profile' | 'store'>('profile');
   const [overlay, setOverlay] = useState<Overlay | null>(null);
   const [toast, setToast] = useState<ToastData | null>(null);
   const steamAdapter = useMemo(() => createSteamAdapter({ cache: createLocalCacheStore() }), []);
@@ -199,7 +201,7 @@ export default function AppShell() {
     }
   }, [activeLibrary, profileSyncing, steamAdapter, steamConnection.status]);
 
-  useProfileSyncGate(overlay?.type === 'profile', syncProfileAchievements);
+  useProfileSyncGate(activeNav === 'Profile', syncProfileAchievements);
 
   const saveSteamCredentials = useCallback(async (credentials: SteamCredentialsInput) => {
     await steamAdapter.saveCredentials(credentials);
@@ -223,6 +225,10 @@ export default function AppShell() {
 
   const changeNav = useCallback((nav: string) => {
     if (!VALID_NAV.has(nav)) return;
+    if (nav === 'Profile') {
+      setProfileSection('profile');
+      setProfileMode('owner');
+    }
     setActiveNav(nav);
     setStore((s) => ({ ...s, lastNav: nav }));
   }, []);
@@ -351,7 +357,7 @@ export default function AppShell() {
             }
             onSelectGame={selectGame}
             onOpenSettings={() => openOverlay({ type: 'settings' })}
-            onOpenProfile={() => openOverlay({ type: 'profile' })}
+            onOpenProfile={() => changeNav('Profile')}
             onOpenSignOut={() => openOverlay({ type: 'signout' })}
             closeSignal={overlay}
           />
@@ -409,6 +415,38 @@ export default function AppShell() {
                 )}
                 {activeNav === 'Indies' && <IndiesView selectedId={selectedId} onSelect={selectGame} />}
                 {activeNav === 'Release' && <EarlyView selectedId={selectedId} onSelect={selectGame} />}
+                {activeNav === 'Profile' && profileSection === 'profile' && (
+                  <PublicProfileView
+                    profile={store.profile}
+                    achievements={store.profile.achievements}
+                    library={activeLibrary}
+                    favorites={safeFavorites}
+                    items={PROFILE_ITEMS}
+                    mode={profileMode}
+                    syncing={profileSyncing}
+                    syncError={profileSyncError}
+                    onChange={(changes: Partial<ProfileState>) => setStore((state) => ({ ...state, profile: { ...state.profile, ...changes } }))}
+                    onSelectGame={(id) => {
+                      selectGame(id);
+                      changeNav('Home');
+                    }}
+                    onOpenStore={() => setProfileSection('store')}
+                    onModeChange={setProfileMode}
+                  />
+                )}
+                {activeNav === 'Profile' && profileSection === 'store' && (
+                  <ProfileStoreView
+                    profile={store.profile}
+                    items={PROFILE_ITEMS}
+                    onPurchase={(itemId) => setStore((state) => {
+                      const result = purchaseProfileItem(state.profile, itemId);
+                      notify(result.message);
+                      return result.ok ? { ...state, profile: result.profile } : state;
+                    })}
+                    onEquip={(itemId) => setStore((state) => ({ ...state, profile: equipProfileItem(state.profile, itemId) }))}
+                    onBack={() => setProfileSection('profile')}
+                  />
+                )}
               </motion.div>
             </AnimatePresence>
           </div>
@@ -448,27 +486,6 @@ export default function AppShell() {
         onSteamClearCredentials={clearSteamCredentials}
         steamNativeAvailable={nativeAvailable}
         steamConnectionMessage={steamConnectionMessage}
-      />
-      <ProfilePanel
-        open={overlay?.type === 'profile'}
-        profile={store.profile}
-        achievements={store.profile.achievements}
-        items={PROFILE_ITEMS}
-        syncing={profileSyncing}
-        syncError={profileSyncError}
-        favorites={safeFavorites}
-        onChange={(changes: Partial<ProfileState>) => setStore((state) => ({ ...state, profile: { ...state.profile, ...changes } }))}
-        onPurchase={(itemId) => setStore((state) => {
-          const result = purchaseProfileItem(state.profile, itemId);
-          notify(result.message);
-          return result.ok ? { ...state, profile: result.profile } : state;
-        })}
-        onEquip={(itemId) => setStore((state) => ({ ...state, profile: equipProfileItem(state.profile, itemId) }))}
-        onSelectGame={(id) => {
-          selectGame(id);
-          changeNav('Home');
-        }}
-        onClose={() => setOverlay(null)}
       />
       <CommunityPreview
         item={overlay?.type === 'community' ? overlay.item : null}

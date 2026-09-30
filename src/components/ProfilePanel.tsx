@@ -37,17 +37,22 @@ export default function ProfilePanel({
   const favGames = (favorites ?? []).map(getLibraryGame).filter((g): g is UnifiedGame => !!g);
   const installedCount = getInstalledGames(libraryGames).length;
   const equipped = new Set(Object.values(profile.equipped));
+  const frameEquipped = profile.equipped.frame === 'frame-lilac';
+  const backgroundEquipped = profile.equipped.background === 'background-nebula';
+  const titleEquipped = items.find((item) => item.id === profile.equipped.title);
+  const badgeEquipped = items.find((item) => item.id === profile.equipped.badge);
   const initials = profile.name.trim().charAt(0).toUpperCase() || 'A';
 
   return (
     <Modal open={open} onClose={onClose} labelledBy="profile-title" panelClass="max-w-[520px]">
-      <div className="no-scrollbar max-h-[86vh] overflow-y-auto p-5">
+      <div className={`no-scrollbar max-h-[86vh] overflow-y-auto p-5 ${backgroundEquipped ? 'bg-[radial-gradient(circle_at_90%_0%,rgba(130,99,161,0.28),transparent_48%)]' : ''}`}>
         <div className="flex items-start gap-3">
-          <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[16px] border border-[#A07CC1]/40 bg-gradient-to-br from-[#4A3560] via-[#8263A1] to-[#17101F] text-[22px] font-extrabold text-[#F1EAF8]">
-            {profile.avatarUrl ? <img src={profile.avatarUrl} alt="Profile avatar" className="h-full w-full object-cover" /> : initials}
+          <div className={`flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[16px] border border-[#A07CC1]/40 bg-gradient-to-br from-[#4A3560] via-[#8263A1] to-[#17101F] text-[22px] font-extrabold text-[#F1EAF8] ${frameEquipped ? 'ring-2 ring-[#E4C98E]/80 ring-offset-2 ring-offset-[#17101F]' : ''}`}>
+            {profile.avatarUrl ? <img src={profile.avatarUrl} alt="Profile avatar" className={`h-full w-full object-cover ${frameEquipped ? 'ring-2 ring-[#E4C98E]/80' : ''}`} /> : initials}
           </div>
           <div className="min-w-0 flex-1">
             <h2 id="profile-title" className="truncate text-[16px] font-bold text-[#F1EAF8]">{profile.name}</h2>
+            {(titleEquipped || badgeEquipped) && <p className="mt-0.5 text-[10px] text-[#E4C98E]/80">{titleEquipped?.name}{titleEquipped && badgeEquipped ? ' · ' : ''}{badgeEquipped?.name}</p>}
             <p className="flex items-center gap-1.5 text-[11px] text-[#BEA0D8]/70">
               <span className="h-1.5 w-1.5 rounded-full bg-[#90d490] shadow-[0_0_6px_rgba(144,212,144,0.8)]" />
               Local profile · {syncing ? 'syncing Steam achievements' : 'ready'}
@@ -111,7 +116,7 @@ export default function ProfilePanel({
           <div className="grid grid-cols-2 gap-2">
             {items.map((item) => {
               const owned = profile.unlockedItems.includes(item.id);
-              const isEquipped = equipped.has(item.id);
+              const isEquipped = owned && equipped.has(item.id);
               return (
                 <div key={item.id} className="rounded-[10px] border border-[rgba(217,198,234,0.10)] bg-[rgba(74,53,96,0.15)] p-2.5">
                   <div className="flex items-start justify-between gap-2">

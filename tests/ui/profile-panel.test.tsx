@@ -6,7 +6,7 @@ import { PROFILE_ITEMS, createDefaultProfile } from '../../src/domain/profile';
 
 describe('ProfilePanel', () => {
   it('shows editable local identity, points and the profile shop', () => {
-    const profile = { ...createDefaultProfile(), points: 100 };
+    const profile = { ...createDefaultProfile(), points: 100, avatarUrl: 'https://cdn.test/avatar.jpg', equipped: { frame: 'frame-lilac' as const, background: 'background-nebula' as const } };
     const onChange = vi.fn();
     const onPurchase = vi.fn();
     const item = PROFILE_ITEMS.find((candidate) => candidate.id === 'frame-lilac');
@@ -29,6 +29,7 @@ describe('ProfilePanel', () => {
     );
 
     expect(screen.getByDisplayValue('Andreh')).toBeTruthy();
+    expect(screen.getByAltText('Profile avatar').className).toContain('ring-2');
     expect(screen.getByText('100 pts')).toBeTruthy();
     expect(screen.getByText('First Blood')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: `Buy ${item.name}` }));

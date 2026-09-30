@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import type { UnifiedGame } from '../domain/game';
+import { isInstalled } from '../domain/library';
 import { SmartImage } from './SmartImage';
 
 export default function InstalledGameItem({
@@ -41,6 +42,7 @@ export default function InstalledGameItem({
         <SmartImage
           src={game.artwork.cover}
           fallback={game.artwork.coverFallback}
+          fallback2={game.artwork.coverFallback2}
           alt={game.title}
           className="h-full w-full object-cover transition-all duration-200 group-hover:scale-[1.03] group-hover:brightness-110"
         />
@@ -49,9 +51,9 @@ export default function InstalledGameItem({
         <span className={`block truncate text-[11px] font-medium ${active ? 'text-[#F1EAF8]' : 'text-[#D9C6EA]/85 group-hover:text-[#F1EAF8]'}`}>
           {game.title}
         </span>
-        {game.subtitle && (
-          <span className="block truncate text-[8.5px] font-medium text-[#BEA0D8]/90">{game.subtitle}</span>
-        )}
+        <span className="block truncate text-[8.5px] font-medium text-[#BEA0D8]/90">
+          {isInstalled(game) ? 'Installed' : game.subtitle ?? 'Owned on Steam'}
+        </span>
       </span>
       {active && !compact && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#A07CC1] shadow-[0_0_8px_rgba(190,160,216,0.6)]" />}
     </motion.button>

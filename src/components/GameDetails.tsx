@@ -112,7 +112,7 @@ export default function GameDetails({
         {/* artwork */}
         <div className="relative h-[190px] w-full shrink-0 overflow-hidden bg-[rgba(74,53,96,0.25)] sm:h-auto sm:min-h-[430px] sm:w-[220px]">
           {game.artwork.cover ? (
-            <SmartImage src={game.artwork.cover} fallback={game.artwork.coverFallback} alt={game.title} className="absolute inset-0 h-full w-full object-cover object-top" />
+            <SmartImage src={game.artwork.cover} fallback={game.artwork.coverFallback} fallback2={game.artwork.coverFallback2} alt={game.title} className="absolute inset-0 h-full w-full object-cover object-top" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#4A3560] via-[#8263A1] to-[#17101F] text-[64px] font-extrabold text-[#F1EAF8]">
               P

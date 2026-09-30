@@ -2,6 +2,7 @@ import type { CacheStore } from '../cache/cacheStore';
 import type { UnifiedGame } from '../../domain/game';
 import type { SteamAppDetails, SteamClient, SteamConnectionResponse, SteamOwnedGame } from './steamClient';
 import { createSteamClient } from './steamClient';
+import { resolveSteamAssets } from './steamAssets';
 import { createSteamNewsLoader, type SteamNewsResult } from './steamNews';
 import { createSteamCredentialClient, type SteamCredentialClient, type SteamCredentialsInput } from './steamCredentials';
 
@@ -40,6 +41,7 @@ interface SteamAdapterOptions {
 }
 
 const LIBRARY_TTL_MS = 5 * 60 * 1000;
+const APP_DETAILS_TTL_MS = 24 * 60 * 60 * 1000;
 const STEAM_COMMUNITY_ASSET_BASE = 'https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps';
 
 function providerErrorMessage(error: unknown, fallback: string): string {
@@ -62,22 +64,43 @@ function mapConnection(response: SteamConnectionResponse): ConnectionState {
   throw new SteamAdapterError('offline', 'Steam could not be reached.');
 }
 
-function normalizeOwnedGame(game: SteamOwnedGame): UnifiedGame {
+function normalizeOwnedGame(game: SteamOwnedGame, details?: SteamAppDetails): UnifiedGame {
   const appId = String(game.appid);
-  const cover = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`;
-  const hero = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/library_hero.jpg`;
-  const logo = game.img_logo_url ? `${STEAM_COMMUNITY_ASSET_BASE}/${appId}/${game.img_logo_url}.jpg` : undefined;
+  const fallbackCover = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`;
+  const fallbackHero = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/library_hero.jpg`;
+  const fallbackLogo = game.img_logo_url ? `${STEAM_COMMUNITY_ASSET_BASE}/${appId}/${game.img_logo_url}.jpg` : undefined;
+  const artwork = details ? resolveSteamAssets(details) : {
+    cover: fallbackCover,
+    coverFallback: fallbackCover,
+    coverFallback2: fallbackCover,
+    hero: fallbackHero,
+    heroFallback: fallbackCover,
+    logo: fallbackLogo,
+  };
+  const genres = details?.genres?.map((genre) => genre.description).filter((genre): genre is string => !!genre?.trim());
   return {
     id: `steam:${appId}`,
-    title: game.name,
-    subtitle: 'Steam library',
-    highlight: 'Owned on Steam',
-    artwork: { cover, coverFallback: cover, hero, heroFallback: cover, logo },
+    title: details?.name?.trim() || game.name,
+    subtitle: details?.developers?.[0] ?? 'Steam library',
+    highlight: game.installed ? 'Installed on Steam' : 'Owned on Steam',
+    description: details?.short_description,
+    artwork,
+    metadata: details
+      ? {
+          developer: details.developers?.[0],
+          publisher: details.publishers?.[0],
+          releaseDate: details.release_date?.date,
+          genres,
+        }
+      : undefined,
     providers: [{
       provider: 'steam',
       externalId: appId,
       owned: true,
-      installed: false,
+      installed: game.installed === true,
+      installPath: game.installPath,
+      launchUri: `steam://rungameid/${appId}`,
+      installUri: `steam://install/${appId}`,
       playtimeMinutes: game.playtime_forever ?? 0,
       lastPlayed: game.rtime_last_played ? new Date(game.rtime_last_played * 1000).toISOString() : undefined,
     }],
@@ -95,6 +118,20 @@ export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
   const ttlMs = options.libraryTtlMs ?? LIBRARY_TTL_MS;
   const newsLoader = createSteamNewsLoader({ client, cache: options.cache, now });
   let connection: ConnectionState = { status: 'disconnected' };
+
+  async function hydrateGame(game: SteamOwnedGame): Promise<UnifiedGame> {
+    const detailsKey = `steam:app:${game.appid}`;
+    const cached = await options.cache.get<SteamAppDetails>(detailsKey);
+    if (cached && !cached.stale) return normalizeOwnedGame(game, cached.value);
+    try {
+      const details = await client.getAppDetails(game.appid);
+      await options.cache.set(detailsKey, details, APP_DETAILS_TTL_MS);
+      return normalizeOwnedGame(game, details);
+    } catch {
+      if (cached?.value) return normalizeOwnedGame(game, cached.value);
+      return normalizeOwnedGame(game);
+    }
+  }
 
   return {
     saveCredentials: (input) => credentials.save(input),
@@ -120,7 +157,11 @@ export function createSteamAdapter(options: SteamAdapterOptions): SteamAdapter {
       const cacheKey = `steam:library:${connection.steamId}`;
       try {
         const ownedGames = (await client.getOwnedGames()).filter(isOwnedGame);
-        const games = ownedGames.map(normalizeOwnedGame);
+        const games: UnifiedGame[] = [];
+        for (let index = 0; index < ownedGames.length; index += 4) {
+          const batch = ownedGames.slice(index, index + 4);
+          games.push(...await Promise.all(batch.map(hydrateGame)));
+        }
         await options.cache.set(cacheKey, games, ttlMs);
         return games;
       } catch (error) {

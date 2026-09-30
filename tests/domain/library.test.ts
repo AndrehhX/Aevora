@@ -6,6 +6,7 @@ import {
   getRecentlyPlayedGames,
   isInstalled,
   isOwned,
+  getOwnedGames,
 } from '../../src/domain/library';
 import type { UnifiedGame } from '../../src/domain/game';
 
@@ -24,6 +25,16 @@ describe('library selectors', () => {
     expect(isOwned(game())).toBe(true);
     expect(isInstalled(game())).toBe(true);
     expect(isOwned(game({ providers: [{ provider: 'steam', externalId: '10', owned: false, installed: false }] }))).toBe(false);
+  });
+
+  it('keeps owned but not installed games visible in the full library', () => {
+    const installed = game({ id: 'installed' });
+    const ownedOnly = game({
+      id: 'owned-only',
+      providers: [{ provider: 'steam', externalId: '20', owned: true, installed: false }],
+    });
+
+    expect(getOwnedGames([installed, ownedOnly]).map((item) => item.id)).toEqual(['installed', 'owned-only']);
   });
 
   it('prefers the requested installed provider and falls back safely', () => {

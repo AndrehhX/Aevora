@@ -122,7 +122,7 @@ export default function HeroBanner({
           mx.set(0.5);
           my.set(0.5);
         }}
-        className="group relative h-[clamp(300px,52vh,560px)] w-full overflow-hidden rounded-[18px] border border-[rgba(217,198,234,0.10)] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]"
+        className="group relative h-[clamp(250px,36vh,380px)] w-full overflow-hidden rounded-[18px] border border-[rgba(217,198,234,0.10)] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]"
       >
         {/* parallax wrapper holds the crossfade stack so transforms never fight */}
         <motion.div className="absolute inset-0" style={reduced || !parallax ? undefined : { x: imgX, y: imgY }}>
@@ -130,9 +130,14 @@ export default function HeroBanner({
             <motion.img
               key={display.id}
               initial={{ opacity: 0, scale: reduced ? 1 : 1.025 }}
-              animate={{ opacity: 1, scale: 1 }}
+              animate={reduced ? { opacity: 1, scale: 1 } : { opacity: 1, scale: [1, 1.025, 1], x: [0, -3, 0], y: [0, 2, 0] }}
               exit={{ opacity: 0, scale: reduced ? 1 : 1.02 }}
-              transition={{ duration: reduced ? 0.25 : HERO_CROSSFADE, ease: EASE.out }}
+              transition={reduced ? { duration: 0.25, ease: EASE.out } : {
+                opacity: { duration: HERO_CROSSFADE, ease: EASE.out },
+                scale: { duration: 18, ease: 'easeInOut', repeat: Infinity },
+                x: { duration: 18, ease: 'easeInOut', repeat: Infinity },
+                y: { duration: 18, ease: 'easeInOut', repeat: Infinity },
+              }}
               src={display.id === game.id && heroSrc ? heroSrc : display.artwork.hero}
               onError={(e) => {
                 if ((e.target as HTMLImageElement).src !== display.artwork.heroFallback) {
@@ -162,9 +167,9 @@ export default function HeroBanner({
         </AnimatePresence>
 
         {/* gradients for readability */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/35 via-transparent to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-[#0D0912]/60 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/5" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/28 via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[34%] bg-gradient-to-t from-[#0D0912]/48 to-transparent" />
 
         {/* logo — staggered ~50ms after background */}
         <div className="pointer-events-none absolute left-[26px] top-[46px] select-none">

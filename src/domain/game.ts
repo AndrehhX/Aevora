@@ -16,6 +16,8 @@ export interface UnifiedGame {
   artwork: {
     cover: string;
     coverFallback: string;
+    /** Optional last-resort image for titles without native library art. */
+    coverFallback2?: string;
     hero: string;
     heroFallback: string;
     /** Transparent logo/wordmark. Preferred over title in hero. */

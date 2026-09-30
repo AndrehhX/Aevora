@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import TopNavigation from './TopNavigation';
@@ -13,16 +13,17 @@ import CommunityPreview from './CommunityPreview';
 import SignOutDialog from './SignOutDialog';
 import ProviderSelector from './ProviderSelector';
 import LibraryEmptyState from './LibraryEmptyState';
+import HomeOverview from './HomeOverview';
 import StoreView from '../views/StoreView';
 import CommunityView from '../views/CommunityView';
 import { EarlyView, IndiesView } from '../views/Collections';
-import { getInstalledGames } from '../domain/library';
+import { getOwnedGames } from '../domain/library';
 import type { GameProviderEntry, ProviderId } from '../domain/provider';
 import { providerName } from '../domain/provider';
 import type { UnifiedGame } from '../domain/game';
 import { DEFAULT_STATE, loadState, saveState, type PersistedPrefs } from '../domain/storage';
 import { EASE } from '../motion/presets';
-import { carouselIds, libraryGames, setLibraryGames } from '../data/library';
+import { libraryGames, setLibraryGames } from '../data/library';
 import type { CommunityItem } from '../data/navigation';
 import { navItems } from '../data/navigation';
 import { createLocalCacheStore } from '../integrations/cache/cacheStore';
@@ -73,6 +74,7 @@ export default function AppShell() {
   const [activeLibrary, setActiveLibrary] = useState<UnifiedGame[]>(() => libraryGames);
   const [steamNews, setSteamNews] = useState<SteamNewsItem[]>([]);
   const nativeAvailable = useMemo(() => getDesktopBridge().isNative, []);
+  const autoConnectAttempted = useRef(false);
 
   const notify = useCallback((msg: string) => {
     setToast({ id: Date.now(), msg });
@@ -126,6 +128,20 @@ export default function AppShell() {
       notify(message);
     }
   }, [notify, steamAdapter]);
+
+  // Credentials live in Windows Credential Manager, so an app update does not
+  // need to ask for the API key again. Reconnect silently on the next launch.
+  useEffect(() => {
+    if (!nativeAvailable || autoConnectAttempted.current) return;
+    autoConnectAttempted.current = true;
+    let active = true;
+    void steamAdapter.hasCredentials().then((hasCredentials) => {
+      if (active && hasCredentials) void connectSteam();
+    }).catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [connectSteam, nativeAvailable, steamAdapter]);
 
   const disconnectSteam = useCallback(async () => {
     try {
@@ -240,7 +256,7 @@ export default function AppShell() {
 
   const selectedGame = useMemo(() => activeLibrary.find((game) => game.id === selectedId), [activeLibrary, selectedId]);
   const carouselGames = useMemo(
-    () => carouselIds.map((id) => activeLibrary.find((game) => game.id === id)).filter((g): g is UnifiedGame => !!g),
+    () => activeLibrary.slice(0, 12),
     [activeLibrary]
   );
   const safeFavorites = useMemo(
@@ -251,9 +267,9 @@ export default function AppShell() {
   // Ready To Play derives from installed state — no separate sidebar list.
   const readyToPlay = useMemo(() => {
     const q = libraryQuery.trim().toLowerCase();
-    const installed = getInstalledGames(activeLibrary);
-    if (!q) return installed;
-    return installed.filter((g) => g.title.toLowerCase().includes(q));
+    const library = getOwnedGames(activeLibrary);
+    if (!q) return library;
+    return library.filter((g) => g.title.toLowerCase().includes(q));
   }, [activeLibrary, libraryQuery]);
 
   const gameOverlay = overlay?.type === 'game' ? activeLibrary.find((game) => game.id === overlay.id) ?? null : null;
@@ -313,6 +329,13 @@ export default function AppShell() {
                           onCta={(g) => openOverlay({ type: 'game', id: g.id })}
                           parallax={prefs.parallax}
                           forceReduced={prefs.reduceMotion}
+                        />
+                        <HomeOverview
+                          library={activeLibrary}
+                          selectedGame={selectedGame}
+                          steamConnected={steamConnection.status === 'connected'}
+                          newsCount={steamNews.length}
+                          onOpenSelected={() => openOverlay({ type: 'game', id: selectedGame.id })}
                         />
                         {carouselGames.length > 0 && (
                           <GameCarousel games={carouselGames} selectedId={selectedId} onSelect={selectGame} inertia={prefs.inertia} />

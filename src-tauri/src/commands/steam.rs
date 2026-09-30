@@ -3,7 +3,14 @@ use reqwest::Client;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
 use std::time::Duration;
+
+#[cfg(target_os = "windows")]
+use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
+#[cfg(target_os = "windows")]
+use winreg::RegKey;
 
 const STEAM_API: &str = "https://api.steampowered.com";
 const STEAM_STORE_API: &str = "https://store.steampowered.com/api/appdetails";
@@ -21,6 +28,14 @@ pub struct SteamOwnedGame {
     pub img_icon_url: Option<String>,
     #[serde(default)]
     pub img_logo_url: Option<String>,
+    #[serde(default)]
+    pub installed: bool,
+    #[serde(
+        rename = "installPath",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub install_path: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -168,7 +183,10 @@ pub fn normalize_steam_account(account: &str) -> String {
         .strip_prefix("id/")
         .or_else(|| without_host.strip_prefix("profiles/"))
         .unwrap_or(without_host);
-    path.split(['/', '?', '#']).next().unwrap_or(path).to_string()
+    path.split(['/', '?', '#'])
+        .next()
+        .unwrap_or(path)
+        .to_string()
 }
 
 async fn get_json<T: DeserializeOwned>(
@@ -225,6 +243,231 @@ pub fn parse_owned_games(payload: &str) -> Result<Vec<SteamOwnedGame>, String> {
         .into_iter()
         .filter(|game| game.appid > 0 && !game.name.trim().is_empty())
         .collect())
+}
+
+fn parse_vdf_values(line: &str) -> Vec<String> {
+    let mut values = Vec::new();
+    let mut current = String::new();
+    let mut quoted = false;
+    let mut escaped = false;
+
+    for character in line.chars() {
+        if escaped {
+            current.push(character);
+            escaped = false;
+            continue;
+        }
+        if quoted && character == '\\' {
+            current.push(character);
+            escaped = true;
+            continue;
+        }
+        if character == '"' {
+            if quoted {
+                values.push(current.clone());
+                current.clear();
+            }
+            quoted = !quoted;
+        } else if quoted {
+            current.push(character);
+        }
+    }
+
+    values
+}
+
+fn unescape_vdf_path(value: &str) -> String {
+    value.replace("\\\\", "\\")
+}
+
+pub fn parse_library_folder_paths(payload: &str) -> Vec<String> {
+    payload
+        .lines()
+        .filter_map(|line| {
+            let values = parse_vdf_values(line);
+            (values.first().map(String::as_str) == Some("path"))
+                .then(|| values.get(1).map(|value| unescape_vdf_path(value)))
+                .flatten()
+        })
+        .collect()
+}
+
+pub fn parse_manifest_install_dir(payload: &str) -> Option<String> {
+    payload.lines().find_map(|line| {
+        let values = parse_vdf_values(line);
+        (values.first().map(String::as_str) == Some("installdir"))
+            .then(|| values.get(1).cloned())
+            .flatten()
+    })
+}
+
+pub fn parse_manifest_name(payload: &str) -> Option<String> {
+    payload.lines().find_map(|line| {
+        let values = parse_vdf_values(line);
+        (values.first().map(String::as_str) == Some("name"))
+            .then(|| values.get(1).cloned())
+            .flatten()
+    })
+}
+
+fn parse_manifest_state_flags(payload: &str) -> Option<u32> {
+    payload.lines().find_map(|line| {
+        let values = parse_vdf_values(line);
+        (values.first().map(String::as_str) == Some("StateFlags"))
+            .then(|| values.get(1).and_then(|value| value.parse::<u32>().ok()))
+            .flatten()
+    })
+}
+
+fn push_unique_path(paths: &mut Vec<PathBuf>, path: PathBuf) {
+    if path.as_os_str().is_empty() {
+        return;
+    }
+    let normalized = path.to_string_lossy().replace('/', "\\");
+    if !paths.iter().any(|existing| {
+        existing
+            .to_string_lossy()
+            .replace('/', "\\")
+            .eq_ignore_ascii_case(&normalized)
+    }) {
+        paths.push(path);
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn registry_steam_roots() -> Vec<PathBuf> {
+    let locations = [
+        (HKEY_CURRENT_USER, "Software\\Valve\\Steam"),
+        (HKEY_CURRENT_USER, "Software\\WOW6432Node\\Valve\\Steam"),
+        (HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Valve\\Steam"),
+        (HKEY_LOCAL_MACHINE, "SOFTWARE\\Valve\\Steam"),
+    ];
+    let mut roots = Vec::new();
+    for (hive, key_path) in locations {
+        let hive = RegKey::predef(hive);
+        if let Ok(key) = hive.open_subkey(key_path) {
+            for name in ["SteamPath", "InstallPath"] {
+                if let Ok(value) = key.get_value::<String, _>(name) {
+                    push_unique_path(&mut roots, PathBuf::from(value.replace('/', "\\")));
+                }
+            }
+        }
+    }
+    roots
+}
+
+#[cfg(not(target_os = "windows"))]
+fn registry_steam_roots() -> Vec<PathBuf> {
+    Vec::new()
+}
+
+fn steam_library_roots() -> Vec<PathBuf> {
+    let mut roots = registry_steam_roots();
+    for path in [
+        PathBuf::from(r"C:\Program Files (x86)\Steam"),
+        PathBuf::from(r"C:\Program Files\Steam"),
+    ] {
+        push_unique_path(&mut roots, path);
+    }
+
+    let mut all_roots = Vec::new();
+    for root in roots {
+        push_unique_path(&mut all_roots, root.clone());
+        let library_file = root.join("steamapps").join("libraryfolders.vdf");
+        if let Ok(payload) = fs::read_to_string(library_file) {
+            for path in parse_library_folder_paths(&payload) {
+                push_unique_path(&mut all_roots, PathBuf::from(path));
+            }
+        }
+    }
+    all_roots
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct LocalSteamGame {
+    name: String,
+    install_path: String,
+}
+
+fn installed_games_from_roots(roots: &[PathBuf]) -> HashMap<u32, LocalSteamGame> {
+    let mut installed = HashMap::new();
+    for root in roots {
+        let steamapps = root.join("steamapps");
+        let Ok(entries) = fs::read_dir(&steamapps) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
+                continue;
+            };
+            let Some(app_id) = file_name
+                .strip_prefix("appmanifest_")
+                .and_then(|name| name.strip_suffix(".acf"))
+                .and_then(|id| id.parse::<u32>().ok())
+            else {
+                continue;
+            };
+            let Ok(payload) = fs::read_to_string(&path) else {
+                continue;
+            };
+            if parse_manifest_state_flags(&payload).is_some_and(|flags| flags & 4 == 0) {
+                continue;
+            }
+            let install_path = parse_manifest_install_dir(&payload)
+                .map(|directory| {
+                    steamapps
+                        .join("common")
+                        .join(directory)
+                        .to_string_lossy()
+                        .to_string()
+                })
+                .unwrap_or_else(|| steamapps.to_string_lossy().to_string());
+            installed.insert(
+                app_id,
+                LocalSteamGame {
+                    name: parse_manifest_name(&payload)
+                        .unwrap_or_else(|| format!("Steam App {app_id}")),
+                    install_path,
+                },
+            );
+        }
+    }
+    installed
+}
+
+fn annotate_installed_games(
+    games: &mut [SteamOwnedGame],
+    installed: &HashMap<u32, LocalSteamGame>,
+) {
+    for game in games {
+        if let Some(local) = installed.get(&game.appid) {
+            game.installed = true;
+            game.install_path = Some(local.install_path.clone());
+        }
+    }
+}
+
+fn merge_local_games(games: &mut Vec<SteamOwnedGame>, installed: &HashMap<u32, LocalSteamGame>) {
+    let known = games
+        .iter()
+        .map(|game| game.appid)
+        .collect::<std::collections::HashSet<_>>();
+    for (appid, local) in installed {
+        if known.contains(appid) {
+            continue;
+        }
+        games.push(SteamOwnedGame {
+            appid: *appid,
+            name: local.name.clone(),
+            playtime_forever: None,
+            rtime_last_played: None,
+            img_icon_url: None,
+            img_logo_url: None,
+            installed: true,
+            install_path: Some(local.install_path.clone()),
+        });
+    }
 }
 
 pub fn parse_app_details(payload: &str, app_id: u32) -> Result<SteamAppDetails, String> {
@@ -293,7 +536,11 @@ pub async fn steam_get_owned_games() -> Result<Vec<SteamOwnedGame>, String> {
         .text()
         .await
         .map_err(|_| "Steam returned an invalid library response.".to_string())?;
-    parse_owned_games(&payload)
+    let mut games = parse_owned_games(&payload)?;
+    let installed = installed_games_from_roots(&steam_library_roots());
+    annotate_installed_games(&mut games, &installed);
+    merge_local_games(&mut games, &installed);
+    Ok(games)
 }
 
 #[tauri::command]
@@ -341,12 +588,23 @@ pub fn steam_disconnect() {}
 
 #[cfg(test)]
 mod tests {
-    use super::{normalize_steam_account, parse_app_details, parse_news, parse_owned_games};
+    use super::{
+        merge_local_games, normalize_steam_account, parse_app_details, parse_library_folder_paths,
+        parse_manifest_install_dir, parse_manifest_name, parse_news, parse_owned_games,
+        LocalSteamGame, SteamOwnedGame,
+    };
+    use std::collections::HashMap;
 
     #[test]
     fn normalizes_steam_profile_urls_before_vanity_resolution() {
-        assert_eq!(normalize_steam_account("https://steamcommunity.com/id/andreh/"), "andreh");
-        assert_eq!(normalize_steam_account("steamcommunity.com/profiles/76561198000000000"), "76561198000000000");
+        assert_eq!(
+            normalize_steam_account("https://steamcommunity.com/id/andreh/"),
+            "andreh"
+        );
+        assert_eq!(
+            normalize_steam_account("steamcommunity.com/profiles/76561198000000000"),
+            "76561198000000000"
+        );
     }
 
     #[test]
@@ -378,5 +636,83 @@ mod tests {
         let news = parse_news(payload).unwrap();
         assert_eq!(news.appnews.newsitems[0].url, "https://steam.test/update");
         assert_eq!(news.appnews.newsitems[0].date, 1700000000);
+    }
+
+    #[test]
+    fn parses_all_steam_library_paths_from_libraryfolders_vdf() {
+        let payload = r#"
+            "libraryfolders"
+            {
+                "0"
+                {
+                    "path" "C:\\Program Files (x86)\\Steam"
+                }
+                "1"
+                {
+                    "path" "D:\\SteamLibrary"
+                }
+            }
+        "#;
+
+        assert_eq!(
+            parse_library_folder_paths(payload),
+            vec![
+                r#"C:\Program Files (x86)\Steam"#.to_string(),
+                r#"D:\SteamLibrary"#.to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn reads_install_directory_from_a_steam_manifest() {
+        let payload = r#"
+            "AppState"
+            {
+                "appid" "550"
+                "name" "Left 4 Dead 2"
+                "installdir" "Left 4 Dead 2"
+            }
+        "#;
+
+        assert_eq!(
+            parse_manifest_install_dir(payload).as_deref(),
+            Some("Left 4 Dead 2")
+        );
+        assert_eq!(
+            parse_manifest_name(payload).as_deref(),
+            Some("Left 4 Dead 2")
+        );
+    }
+
+    #[test]
+    fn merges_locally_installed_games_missing_from_the_api_response() {
+        let mut games = vec![SteamOwnedGame {
+            appid: 550,
+            name: "Left 4 Dead 2".to_string(),
+            playtime_forever: None,
+            rtime_last_played: None,
+            img_icon_url: None,
+            img_logo_url: None,
+            installed: false,
+            install_path: None,
+        }];
+        let mut installed = HashMap::new();
+        installed.insert(
+            322170,
+            LocalSteamGame {
+                name: "Geometry Dash".to_string(),
+                install_path: r#"C:\Steam\steamapps\common\Geometry Dash"#.to_string(),
+            },
+        );
+
+        merge_local_games(&mut games, &installed);
+
+        assert_eq!(games.len(), 2);
+        assert_eq!(games[1].appid, 322170);
+        assert!(games[1].installed);
+        assert_eq!(
+            games[1].install_path.as_deref(),
+            Some(r#"C:\Steam\steamapps\common\Geometry Dash"#)
+        );
     }
 }

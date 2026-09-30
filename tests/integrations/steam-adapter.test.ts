@@ -41,15 +41,38 @@ describe('SteamAdapter', () => {
   });
 
   it('normalizes a connected account and its owned games', async () => {
-    const adapter = createSteamAdapter({ client: clientWith(), cache: createMemoryCacheStore() });
+    const adapter = createSteamAdapter({
+      client: clientWith({
+        getOwnedGames: async () => [{ ...ownedGame, installed: true } as SteamOwnedGame],
+        getAppDetails: async () => ({
+          appid: 570,
+          name: 'Dota 2',
+          type: 'game',
+          short_description: 'A real Steam description.',
+          header_image: 'https://cdn.steam.test/header.jpg',
+          background_raw: 'https://cdn.steam.test/background.jpg',
+          logo: 'https://cdn.steam.test/logo.png',
+          developers: ['Valve'],
+          publishers: ['Valve'],
+          genres: [{ id: '1', description: 'Action' }],
+        }),
+      }),
+      cache: createMemoryCacheStore(),
+    });
 
     await expect(adapter.connect()).resolves.toMatchObject({ status: 'connected', steamId: '76561198000000000' });
     await expect(adapter.getLibrary()).resolves.toMatchObject([
       {
         id: 'steam:570',
         title: 'Dota 2',
-        artwork: { logo: 'https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/570/logo-hash.jpg' },
-        providers: [{ provider: 'steam', externalId: '570', owned: true, installed: false, playtimeMinutes: 120 }],
+        description: 'A real Steam description.',
+        artwork: {
+          cover: 'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/570/library_600x900_2x.jpg',
+          hero: 'https://cdn.steam.test/background.jpg',
+          logo: 'https://cdn.steam.test/logo.png',
+        },
+        metadata: { developer: 'Valve', publisher: 'Valve', genres: ['Action'] },
+        providers: [{ provider: 'steam', externalId: '570', owned: true, installed: true, playtimeMinutes: 120 }],
       },
     ]);
   });

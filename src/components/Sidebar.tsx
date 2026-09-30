@@ -75,7 +75,7 @@ export default function Sidebar({
             collapsed ? 'mb-0 h-0 overflow-hidden opacity-0' : 'mb-1.5 opacity-100'
           }`}
         >
-          Ready To Play
+          Library
         </div>
         <div className="no-scrollbar max-h-full overflow-y-auto pb-2">
           <InstalledGameList games={filteredGames} selectedId={selectedId} onSelect={setSelectedId} compact={collapsed} />

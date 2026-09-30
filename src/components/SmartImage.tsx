@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 export function SmartImage({
   src,
   fallback,
+  fallback2,
   alt,
   className,
   style,
@@ -10,15 +11,16 @@ export function SmartImage({
 }: {
   src: string;
   fallback: string;
+  fallback2?: string;
   alt: string;
   className?: string;
   style?: React.CSSProperties;
   loading?: 'eager' | 'lazy';
 }) {
-  const [failed, setFailed] = useState<'primary' | 'fallback' | 'placeholder'>('primary');
+  const [failed, setFailed] = useState<'primary' | 'fallback' | 'fallback2' | 'placeholder'>('primary');
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    setFailed(src ? 'primary' : fallback ? 'fallback' : 'placeholder');
+    setFailed(src ? 'primary' : fallback ? 'fallback' : fallback2 ? 'fallback2' : 'placeholder');
     setLoaded(false);
   }, [src, fallback]);
 
@@ -43,7 +45,7 @@ export function SmartImage({
       </div>
     );
   }
-  const activeSrc = failed === 'fallback' ? fallback : src;
+  const activeSrc = failed === 'fallback' ? fallback : failed === 'fallback2' ? fallback2 : src;
   return (
     <img
       src={activeSrc}
@@ -51,10 +53,14 @@ export function SmartImage({
       draggable={false}
       loading={loading}
       decoding="async"
-      onError={() => setFailed(failed === 'primary' && fallback && fallback !== src ? 'fallback' : 'placeholder')}
+      onError={() => {
+        if (failed === 'primary' && fallback && fallback !== src) setFailed('fallback');
+        else if (fallback2 && fallback2 !== src && fallback2 !== fallback) setFailed('fallback2');
+        else setFailed('placeholder');
+      }}
       onLoad={() => setLoaded(true)}
       className={className}
-      style={{ ...style, opacity: loaded ? 1 : 0, transition: 'opacity 400ms ease' }}
+      style={{ ...style, opacity: loaded ? 1 : 0.82, transition: 'opacity 400ms ease' }}
     />
   );
 }

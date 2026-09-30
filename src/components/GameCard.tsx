@@ -25,14 +25,14 @@ export default function GameCard({
       transition={{ delay: 0.3 + index * CARD_STAGGER, duration: 0.45, ease: EASE.out }}
       onClick={() => onSelect(game.id)}
       onMouseEnter={() => onFocus?.(index)}
-      className="group w-[clamp(110px,10.2vw,158px)] shrink-0 cursor-pointer snap-start"
+      className="group w-[clamp(96px,7.5vw,134px)] shrink-0 cursor-pointer snap-start"
       data-cursor="interactive"
     >
       <motion.div
         whileHover={{ scale: 1.035, y: -3 }}
         whileTap={{ scale: 0.97 }}
         transition={SPRING.soft}
-        className={`relative aspect-[3/4] w-full overflow-hidden rounded-[14px] border bg-[#17101F] shadow-[0_14px_36px_-14px_rgba(0,0,0,0.8)] transition-[box-shadow,border-color,filter] duration-200 ${
+        className={`relative aspect-[2/3] w-full overflow-hidden rounded-[14px] border bg-[#17101F] shadow-[0_14px_36px_-14px_rgba(0,0,0,0.8)] transition-[box-shadow,border-color,filter] duration-200 ${
           selected
             ? 'border-[#A07CC1]/60 shadow-[0_18px_44px_-12px_rgba(190,160,216,0.30)]'
             : 'border-[rgba(217,198,234,0.10)] group-hover:border-[rgba(190,160,216,0.35)] group-hover:shadow-[0_18px_44px_-12px_rgba(190,160,216,0.28)]'
@@ -41,6 +41,7 @@ export default function GameCard({
         <SmartImage
           src={game.artwork.cover}
           fallback={game.artwork.coverFallback}
+          fallback2={game.artwork.coverFallback2}
           alt={game.title}
           className={`h-full w-full object-cover object-top transition-all duration-200 group-hover:brightness-110 ${
             selected ? 'brightness-[1.04]' : 'brightness-[0.96]'

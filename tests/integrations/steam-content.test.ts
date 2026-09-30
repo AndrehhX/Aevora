@@ -15,19 +15,22 @@ describe('Steam content normalization', () => {
     });
 
     expect(assets).toEqual({
-      cover: 'https://cdn.test/capsule.jpg',
-      coverFallback: 'https://cdn.test/header.jpg',
+      cover: 'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/570/library_600x900_2x.jpg',
+      coverFallback: 'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/570/library_600x900.jpg',
+      coverFallback2: 'https://cdn.test/header.jpg',
       hero: 'https://cdn.test/background.jpg',
       heroFallback: 'https://cdn.test/header.jpg',
       logo: 'https://cdn.test/logo.png',
     });
   });
 
-  it('keeps a missing logo optional and creates a CDN fallback for missing background', () => {
+  it('uses the official app logo path and creates a CDN fallback for missing background', () => {
     const assets = resolveSteamAssets({ appid: 730, name: 'Counter-Strike 2', header_image: 'https://cdn.test/header.jpg' });
 
-    expect(assets.logo).toBeUndefined();
-    expect(assets.cover).toBe('https://cdn.test/header.jpg');
+    expect(assets.logo).toBe('https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/730/logo.png');
+    expect(assets.cover).toBe('https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/730/library_600x900_2x.jpg');
+    expect(assets.coverFallback).toBe('https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/730/library_600x900.jpg');
+    expect(assets.coverFallback2).toBe('https://cdn.test/header.jpg');
     expect(assets.hero).toContain('/730/library_hero.jpg');
     expect(assets.heroFallback).toBe('https://cdn.test/header.jpg');
   });

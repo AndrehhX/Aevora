@@ -12,3 +12,12 @@ Thumbs.db
 .superpowers/
 src-tauri/target/
 src-tauri/gen/
+
+# Signing keys & secrets
+*.key
+*.key.pub
+*.pem
+*.pub
+*.sig
+.tauri/
+aevora.key*

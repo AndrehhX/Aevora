@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Modal from './Modal';
 import Toggle from './Toggle';
@@ -5,6 +6,7 @@ import { DEFAULT_STATE, type PersistedPrefs as Prefs } from '../domain/storage';
 import type { ConnectionState } from '../integrations/steam/steamAdapter';
 import ProviderConnectPanel from './ProviderConnectPanel';
 import type { SteamCredentialsInput } from '../integrations/steam/steamCredentials';
+import { checkForAppUpdates } from '../integrations/desktop/updater';
 
 export const DEFAULT_PREFS = DEFAULT_STATE.prefs;
 export type { PersistedPrefs as Prefs } from '../domain/storage';
@@ -55,6 +57,23 @@ export default function SettingsPanel({
   steamNativeAvailable?: boolean;
   steamConnectionMessage?: string | null;
 }) {
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<string | null>(null);
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true);
+    setUpdateStatus(null);
+    const result = await checkForAppUpdates();
+    setCheckingUpdate(false);
+    if (result.available && result.version) {
+      setUpdateStatus(`Update available: v${result.version}`);
+    } else if (result.error) {
+      setUpdateStatus('Could not reach GitHub Releases.');
+    } else {
+      setUpdateStatus('Aevora is up to date.');
+    }
+  };
+
   const set = <K extends keyof Prefs>(k: K, v: Prefs[K]) => onChange({ ...prefs, [k]: v });
 
   return (
@@ -110,6 +129,25 @@ export default function SettingsPanel({
         <Section title="Behavior">
           <Row label="Hero parallax" hint="Subtle artwork movement following the cursor." control={<Toggle checked={prefs.parallax} onChange={(v) => set('parallax', v)} label="Hero parallax" />} />
           <Row label="Carousel inertia" hint="Momentum glide after dragging the carousel." control={<Toggle checked={prefs.inertia} onChange={(v) => set('inertia', v)} label="Carousel inertia" />} />
+        </Section>
+
+        <Section title="Updates">
+          <div className="flex items-center justify-between py-2">
+            <div className="min-w-0">
+              <div className="text-[12.5px] font-medium text-[#F1EAF8]/90">Aevora Updates</div>
+              <div className="mt-0.5 text-[11px] leading-snug text-[#BEA0D8]/55">
+                {updateStatus ?? 'v0.1.0 · Auto-updates via GitHub Releases'}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleCheckUpdate}
+              disabled={checkingUpdate}
+              className="rounded-full border border-white/15 bg-[rgba(130,99,161,0.25)] px-3 py-1.5 text-[11px] font-semibold text-[#F1EAF8] transition-colors hover:bg-[rgba(130,99,161,0.45)] disabled:opacity-50"
+            >
+              {checkingUpdate ? 'Checking…' : 'Check for updates'}
+            </button>
+          </div>
         </Section>
       </div>
     </Modal>

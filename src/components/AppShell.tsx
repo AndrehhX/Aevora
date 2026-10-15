@@ -335,12 +335,15 @@ export default function AppShell() {
 
       <div className="aevora-frame relative z-10 flex h-full w-full gap-3 p-3">
         <Sidebar
+          activeNav={activeNav}
+          setActiveNav={changeNav}
           libraryQuery={libraryQuery}
           setLibraryQuery={setLibraryQuery}
           filteredGames={readyToPlay}
           selectedId={selectedId}
           setSelectedId={selectGame}
           onCommunityClick={(item) => openOverlay({ type: 'community', item })}
+          onOpenSettings={() => openOverlay({ type: 'settings' })}
           collapsed={prefs.sidebarCollapsed}
           onToggleCollapse={() => setStore((s) => ({ ...s, prefs: { ...s.prefs, sidebarCollapsed: !s.prefs.sidebarCollapsed } }))}
         />
@@ -378,21 +381,40 @@ export default function AppShell() {
                   <>
                     {selectedGame ? (
                       <>
-                        <HeroBanner
-                          game={selectedGame}
-                          onCta={(g) => openOverlay({ type: 'game', id: g.id })}
-                          parallax={prefs.parallax}
-                          forceReduced={prefs.reduceMotion}
-                        />
-                        <HomeOverview
-                          library={activeLibrary}
-                          selectedGame={selectedGame}
-                          steamConnected={steamConnection.status === 'connected'}
-                          newsCount={steamNews.length}
-                          onOpenSelected={() => openOverlay({ type: 'game', id: selectedGame.id })}
-                        />
+                        <div className="grid grid-cols-1 lg:grid-cols-[1.85fr_1fr] gap-3 items-stretch">
+                          <HeroBanner
+                            game={selectedGame}
+                            onCta={(g) => openOverlay({ type: 'game', id: g.id })}
+                            parallax={prefs.parallax}
+                            forceReduced={prefs.reduceMotion}
+                          />
+                          <HomeOverview
+                            library={activeLibrary}
+                            selectedGame={selectedGame}
+                            steamConnected={steamConnection.status === 'connected'}
+                            newsCount={steamNews.length}
+                            onOpenSelected={() => openOverlay({ type: 'game', id: selectedGame.id })}
+                          />
+                        </div>
                         {carouselGames.length > 0 && (
-                          <GameCarousel games={carouselGames} selectedId={selectedId} onSelect={selectGame} inertia={prefs.inertia} />
+                          <div className="flex flex-col gap-2 pt-1">
+                            <div className="flex items-center justify-between px-1">
+                              <div className="flex items-center gap-2.5">
+                                <h3 className="text-[17px] font-bold text-white tracking-tight">Special offers</h3>
+                                <span className="rounded-full bg-white/[0.08] px-2.5 py-0.5 text-[10.5px] font-medium text-[#8E929E]">
+                                  Featured
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => changeNav('Store')}
+                                className="text-[12px] font-semibold text-[#8E929E] hover:text-[#FFA043] transition-colors"
+                              >
+                                Learn more
+                              </button>
+                            </div>
+                            <GameCarousel games={carouselGames} selectedId={selectedId} onSelect={selectGame} inertia={prefs.inertia} />
+                          </div>
                         )}
                       </>
                     ) : (

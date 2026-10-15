@@ -1,11 +1,19 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Database, Radio, Sparkles } from 'lucide-react';
+import { Play, Sparkles } from 'lucide-react';
 import type { UnifiedGame } from '../domain/game';
 import { getHomeStats } from '../domain/home';
 import { EASE } from '../motion/presets';
 import { SmartImage } from './SmartImage';
 import { getSteamCoverCandidates } from '../integrations/steam/steamAssets';
+
+function WindowsIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M0 2.268L6.444 1.39v6.082H0V2.268zm7.195-1.102L16 0v7.472H7.195V1.166zM0 8.528h6.444v6.083L0 13.732V8.528zm7.195 0H16V16l-8.805-1.166V8.528z" />
+    </svg>
+  );
+}
 
 export default function HomeOverview({
   library,
@@ -26,76 +34,113 @@ export default function HomeOverview({
 
   const steamEntry = selectedGame.providers.find((p) => p.provider === 'steam');
   const appId = steamEntry ? steamEntry.externalId : selectedGame.id.startsWith('steam:') ? selectedGame.id.slice(6) : undefined;
-  
-  const coverCandidates = useMemo(() => {
+  const isInstalled = selectedGame.providers.some((p) => p.installed);
+
+  const preview1Candidates = useMemo(() => {
     if (appId) {
-      return getSteamCoverCandidates(appId, selectedGame.artwork.cover, selectedGame.artwork.coverFallback, selectedGame.artwork.coverFallback2);
+      return [
+        `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`,
+        selectedGame.artwork.hero,
+        selectedGame.artwork.heroFallback,
+      ].filter(Boolean) as string[];
     }
-    return [selectedGame.artwork.cover, selectedGame.artwork.coverFallback, selectedGame.artwork.coverFallback2].filter(Boolean) as string[];
-  }, [appId, selectedGame.artwork.cover, selectedGame.artwork.coverFallback, selectedGame.artwork.coverFallback2]);
+    return [selectedGame.artwork.hero, selectedGame.artwork.cover].filter(Boolean) as string[];
+  }, [appId, selectedGame.artwork.hero, selectedGame.artwork.heroFallback, selectedGame.artwork.cover]);
+
+  const preview2Candidates = useMemo(() => {
+    if (appId) {
+      return [
+        `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appId}/capsule_616x353.jpg`,
+        selectedGame.artwork.cover,
+        selectedGame.artwork.coverFallback,
+      ].filter(Boolean) as string[];
+    }
+    return [selectedGame.artwork.coverFallback, selectedGame.artwork.cover].filter(Boolean) as string[];
+  }, [appId, selectedGame.artwork.cover, selectedGame.artwork.coverFallback]);
+
+  const summary = selectedGame.description || selectedGame.subtitle || 
+    `Immerse yourself in ${selectedGame.title} by ${developer}. Features high-fidelity visuals, cloud synchronization, and full controller support.`;
 
   return (
     <motion.section
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.18, duration: 0.45, ease: EASE.out }}
-      className="grid gap-3 lg:grid-cols-[1.35fr_0.8fr_0.8fr]"
+      className="relative flex flex-col justify-between overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#14171E] p-6 shadow-2xl transition-all"
       aria-label="Aevora home overview"
     >
-      <motion.div whileHover={{ y: -3 }} transition={{ type: 'spring', stiffness: 280, damping: 24 }} className="group relative min-h-[152px] overflow-hidden rounded-[18px] border border-white/[0.08] bg-[#17101F]/80 p-4 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.8)] backdrop-blur-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-[rgba(130,99,161,0.20)] via-transparent to-transparent pointer-events-none" />
-        <div className="relative flex h-full gap-3.5">
-          <SmartImage
-            candidates={coverCandidates}
-            src={coverCandidates[0] ?? selectedGame.artwork.cover}
-            fallback={coverCandidates[1] ?? selectedGame.artwork.coverFallback}
-            fallback2={coverCandidates[2] ?? selectedGame.artwork.coverFallback2}
-            alt={selectedGame.title}
-            className="h-[114px] w-[80px] shrink-0 rounded-[12px] border border-white/15 object-cover shadow-[0_12px_28px_-10px_rgba(0,0,0,0.85)]"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-[0.18em] text-[#BEA0D8]/75">
-              <Sparkles size={11} className="text-[#A07CC1]" /> Selected from library
-            </div>
-            <h2 className="mt-1.5 truncate text-[19px] font-black tracking-[0.02em] text-[#F1EAF8]">{selectedGame.title}</h2>
-            <p className="mt-0.5 truncate text-[11.5px] font-medium text-[#BEA0D8]/85">{developer}</p>
-            <button
-              type="button"
-              onClick={onOpenSelected}
-              className="mt-3.5 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-gradient-to-r from-[#8263A1]/35 to-[#A07CC1]/25 px-3.5 py-1.5 text-[10.5px] font-bold text-white shadow-sm transition-all hover:border-white/30 hover:bg-[#8263A1]/50"
-            >
-              Open details <ArrowUpRight size={12} />
-            </button>
+      {/* Warm orange spotlight radial glow in top right */}
+      <div 
+        className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(255,107,43,0.35)_0%,rgba(255,107,43,0.08)_50%,transparent_75%)] blur-2xl" 
+        aria-hidden="true"
+      />
+
+      <div className="relative z-10 flex flex-col">
+        {/* Genre / Dev tag */}
+        <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#FF6B2B]">
+          <Sparkles size={12} className="text-[#FF6B2B]" />
+          <span>Spotlight Selection</span>
+        </div>
+
+        {/* Title */}
+        <h2 className="mt-2 text-[22px] font-black tracking-tight text-white line-clamp-1">
+          {selectedGame.title}
+        </h2>
+
+        {/* Short description */}
+        <p className="mt-2.5 text-[12.5px] leading-relaxed text-[#8E929E] line-clamp-3">
+          {summary}
+        </p>
+
+        {/* Price / Playtime Status */}
+        <div className="mt-4 flex items-center justify-between text-[12px] font-semibold text-[#FFA043]">
+          <span>{isInstalled ? `Installed • ${playtimeHours}h played` : 'Available on Steam'}</span>
+          <span className="text-[#8E929E]/80 text-[11px] font-normal">{developer}</span>
+        </div>
+
+        {/* Primary CTA Button */}
+        <button
+          type="button"
+          onClick={onOpenSelected}
+          className="group mt-3.5 flex items-center justify-between w-full rounded-full bg-gradient-to-r from-[#FF6B2B] to-[#FF4B14] px-5 py-3 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(255,107,43,0.45)] transition-all hover:brightness-110 active:scale-[0.99]"
+        >
+          <span className="flex items-center gap-2">
+            {isInstalled ? <Play size={14} className="fill-white" /> : null}
+            {isInstalled ? 'Play now' : 'Available now'}
+          </span>
+          <div className="flex items-center gap-1.5 opacity-90 transition-transform group-hover:translate-x-0.5">
+            <WindowsIcon className="h-4 w-4" />
+          </div>
+        </button>
+      </div>
+
+      {/* Mini Preview Screenshots */}
+      <div className="relative z-10 mt-5 pt-3 border-t border-white/[0.06]">
+        <div className="mb-2 flex items-center justify-between text-[11px] font-medium text-[#8E929E]">
+          <span>Media preview</span>
+          <span className="text-[10px] text-[#FFA043]">{newsCount > 0 ? `${newsCount} updates` : 'Official assets'}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-white/10 bg-black/40 group">
+            <SmartImage
+              candidates={preview1Candidates}
+              src={preview1Candidates[0] ?? ''}
+              fallback={preview1Candidates[1]}
+              alt={`${selectedGame.title} screenshot 1`}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          </div>
+          <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-white/10 bg-black/40 group">
+            <SmartImage
+              candidates={preview2Candidates}
+              src={preview2Candidates[0] ?? ''}
+              fallback={preview2Candidates[1]}
+              alt={`${selectedGame.title} screenshot 2`}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
           </div>
         </div>
-      </motion.div>
-
-      <motion.div whileHover={{ y: -3 }} transition={{ type: 'spring', stiffness: 280, damping: 24 }} className="relative min-h-[152px] overflow-hidden rounded-[16px] border border-[rgba(217,198,234,0.11)] bg-[rgba(74,53,96,0.18)] p-3.5">
-        <div className="flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.16em] text-[#BEA0D8]/65">
-          <span className="flex items-center gap-1.5"><Database size={11} /> Library</span>
-          <span className="h-1.5 w-1.5 rounded-full bg-[#A07CC1] shadow-[0_0_10px_rgba(190,160,216,0.8)]" />
-        </div>
-        <div className="mt-5 flex items-end gap-2">
-          <strong className="text-[34px] font-extrabold leading-none text-[#F1EAF8]">{stats.totalGames}</strong>
-          <span className="pb-0.5 text-[11px] text-[#BEA0D8]/75">games synced</span>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 text-[10px] text-[#D9C6EA]/70">
-          <span><b className="text-[#F1EAF8]/90">{stats.installedGames}</b> installed</span>
-          <span><b className="text-[#F1EAF8]/90">{playtimeHours}h</b> played</span>
-        </div>
-      </motion.div>
-
-      <motion.div whileHover={{ y: -3 }} transition={{ type: 'spring', stiffness: 280, damping: 24 }} className="relative min-h-[152px] overflow-hidden rounded-[16px] border border-[rgba(217,198,234,0.11)] bg-[rgba(23,16,31,0.74)] p-3.5">
-        <div className="flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.16em] text-[#BEA0D8]/65">
-          <span className="flex items-center gap-1.5"><Radio size={11} /> Live layer</span>
-          <span className={steamConnected ? 'text-[#A8D6B0]' : 'text-[#BEA0D8]/55'}>{steamConnected ? 'Online' : 'Offline'}</span>
-        </div>
-        <div className="mt-4 space-y-2 text-[11px] text-[#D9C6EA]/75">
-          <div className="flex items-center justify-between border-b border-[rgba(217,198,234,0.08)] pb-2"><span>Steam sync</span><span className="text-[#F1EAF8]/90">{steamConnected ? 'Live' : 'Waiting'}</span></div>
-          <div className="flex items-center justify-between border-b border-[rgba(217,198,234,0.08)] pb-2"><span>News feed</span><span className="text-[#F1EAF8]/90">{newsCount} items</span></div>
-          <div className="flex items-center justify-between"><span>Launch bridge</span><span className="text-[#A8D6B0]">Ready</span></div>
-        </div>
-      </motion.div>
+      </div>
     </motion.section>
   );
 }

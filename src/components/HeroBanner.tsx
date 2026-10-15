@@ -248,12 +248,30 @@ export default function HeroBanner({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-[#0D0912] via-[#0D0912]/45 to-transparent" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent h-[30%]" />
 
-        {/* Logo or Title Brand (Top Left) */}
-        <div className="pointer-events-none absolute left-[30px] top-[40px] select-none">
+        {/* Tags bar at top */}
+        <div className="pointer-events-none absolute left-[24px] top-[20px] z-20 flex items-center gap-1.5 flex-wrap select-none">
+          {(display.metadata?.genres && display.metadata.genres.length > 0
+            ? display.metadata.genres.slice(0, 4)
+            : ['Adventure', 'Action', 'Atmospheric']
+          ).map((genre) => (
+            <span
+              key={genre}
+              className="rounded-full border border-white/10 bg-black/45 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md shadow-sm"
+            >
+              {genre}
+            </span>
+          ))}
+          <span className="flex h-[24px] w-[24px] items-center justify-center rounded-full border border-white/10 bg-black/45 text-[12px] font-semibold text-white/80 backdrop-blur-md">
+            +
+          </span>
+        </div>
+
+        {/* Logo or Title Brand (Center) */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center select-none pt-4">
           <AnimatePresence initial={false}>
             <motion.div
               key={display.id}
-              className="w-max max-w-[480px]"
+              className="flex flex-col items-center justify-center max-w-[480px] px-6 text-center"
               initial={{ opacity: 0, y: reduced ? 0 : 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: reduced ? 0 : -6 }}
@@ -268,68 +286,29 @@ export default function HeroBanner({
           </AnimatePresence>
         </div>
 
-        {/* Floating Quick Metadata Chips (Bottom Left) */}
-        <div className="pointer-events-none absolute bottom-[22px] left-[30px] hidden sm:flex items-center gap-2 select-none">
-          <AnimatePresence initial={false}>
-            <motion.div
-              key={display.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3, delay: 0.12 }}
-              className="flex items-center gap-2"
-            >
-              {installed && (
-                <span className="flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-950/50 px-3 py-1 text-[11px] font-semibold text-emerald-200 backdrop-blur-md shadow-[0_2px_12px_rgba(16,185,129,0.2)]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
-                  Ready to Play
-                </span>
-              )}
-              {totalPlay > 0 && (
-                <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[11px] font-medium text-[#D9C6EA]/85 backdrop-blur-md">
-                  <Clock size={11} className="text-[#BEA0D8]" />
-                  {formatPlaytime(totalPlay)}
-                </span>
-              )}
-              {display.metadata?.genres?.[0] && (
-                <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[11px] font-medium text-[#D9C6EA]/85 backdrop-blur-md">
-                  <Sparkles size={11} className="text-[#BEA0D8]" />
-                  {display.metadata.genres[0]}
-                </span>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* CTA Launch / Details Button (Bottom Right) */}
-        <div className="absolute bottom-[20px] right-[24px]">
-          <AnimatePresence initial={false}>
-            <motion.div
-              key={display.id}
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3, delay: 0.1, ease: EASE.out }}
-            >
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: '0 12px 36px -6px rgba(160,124,193,0.5)' }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                onClick={() => onCta(display)}
-                className="group relative flex items-center gap-2.5 overflow-hidden rounded-full border border-white/20 bg-gradient-to-r from-[#8263A1] via-[#A07CC1] to-[#654A7F] px-5 py-2.5 text-[12.5px] font-bold text-[#F1EAF8] shadow-[0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 transition-transform duration-300 group-hover:scale-110">
-                  <Play size={11} className="fill-current text-white ml-0.5" />
-                </span>
-                <span>{display.highlight ?? (installed ? 'Play Now' : 'View Details')}</span>
-                <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-              </motion.button>
-            </motion.div>
-          </AnimatePresence>
+        {/* Friend avatars cluster (Bottom Left) */}
+        <div className="pointer-events-none absolute bottom-[20px] left-[24px] z-20 flex items-center gap-2 rounded-full border border-white/10 bg-black/50 py-1 pl-1.5 pr-3 backdrop-blur-md select-none">
+          <div className="flex -space-x-1.5">
+            <span className="inline-block h-5 w-5 rounded-full ring-2 ring-black/70 bg-gradient-to-tr from-amber-500 to-orange-400" />
+            <span className="inline-block h-5 w-5 rounded-full ring-2 ring-black/70 bg-gradient-to-tr from-blue-500 to-cyan-400" />
+            <span className="inline-block h-5 w-5 rounded-full ring-2 ring-black/70 bg-gradient-to-tr from-emerald-500 to-teal-400" />
+          </div>
+          <span className="text-[11px] font-medium text-white/90">
+            {installed ? 'Ready to play' : `${totalPlay > 0 ? `${Math.max(1, Math.round(totalPlay / 60))}h played` : '12 friends'}`}
+          </span>
         </div>
 
         {/* Subtle glass reflection ring */}
-        <div className="pointer-events-none absolute inset-0 rounded-[20px] ring-1 ring-inset ring-white/10" />
+        <div className="pointer-events-none absolute inset-0 rounded-[26px] ring-1 ring-inset ring-white/10" />
+      </div>
+
+      {/* Pagination dots below featured card */}
+      <div className="mt-2.5 flex items-center justify-center gap-1.5">
+        <span className="h-1.5 w-6 rounded-full bg-[#FF6B2B] shadow-[0_0_10px_rgba(255,107,43,0.8)]" />
+        <span className="h-1.5 w-1.5 rounded-full bg-white/20 transition-colors hover:bg-white/40" />
+        <span className="h-1.5 w-1.5 rounded-full bg-white/20 transition-colors hover:bg-white/40" />
+        <span className="h-1.5 w-1.5 rounded-full bg-white/20 transition-colors hover:bg-white/40" />
+        <span className="h-1.5 w-1.5 rounded-full bg-white/20 transition-colors hover:bg-white/40" />
       </div>
     </motion.section>
   );

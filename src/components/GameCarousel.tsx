@@ -11,11 +11,13 @@ export default function GameCarousel({
   selectedId,
   onSelect,
   inertia = true,
+  title = 'Special offers',
 }: {
   games: UnifiedGame[];
   selectedId: string;
   onSelect: (id: string) => void;
   inertia?: boolean;
+  title?: string;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
@@ -105,8 +107,6 @@ export default function GameCarousel({
   const onPointerDown = (e: React.PointerEvent) => {
     const el = trackRef.current;
     if (!el || e.button !== 0) return;
-    // clicks on interactive children still work: no pointer capture,
-    // movement is tracked on window and clicks are suppressed only after a real drag
     stopMomentum();
     const d = drag.current;
     d.down = true;
@@ -128,8 +128,13 @@ export default function GameCarousel({
       transition={{ delay: 0.3, duration: 0.5, ease: EASE.out }}
       className="relative w-full"
     >
-      <div className="mb-2 flex items-center justify-between px-0.5">
-        <h2 className="text-[12.5px] font-semibold text-[#F1EAF8]/90">Most Popular</h2>
+      <div className="mb-2.5 flex items-center justify-between px-1">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-[17px] font-bold text-white tracking-tight">{title}</h2>
+          <span className="rounded-full bg-white/[0.07] px-2.5 py-0.5 text-[10.5px] font-medium text-[#8E929E]">
+            Featured
+          </span>
+        </div>
       </div>
       <div className="relative">
         <div
@@ -138,7 +143,7 @@ export default function GameCarousel({
           onPointerDown={onPointerDown}
           tabIndex={0}
           role="listbox"
-          aria-label="Most Popular games. Arrow keys move focus, Enter selects."
+          aria-label={`${title}. Arrow keys move focus, Enter selects.`}
           onFocus={() => setKbActive(true)}
           onBlur={() => setKbActive(false)}
           onKeyDown={(e) => {
@@ -170,7 +175,7 @@ export default function GameCarousel({
               el.scrollBy({ left: e.deltaY * 1.2, behavior: 'auto' });
             }
           }}
-          className="no-scrollbar flex snap-x gap-3 overflow-x-auto pb-1 pr-10 active:cursor-grabbing"
+          className="no-scrollbar flex snap-x gap-3.5 overflow-x-auto pb-2 pr-10 active:cursor-grabbing"
           style={{ scrollbarWidth: 'none', cursor: 'grab', touchAction: 'pan-y' }}
         >
           {games.map((g, i) => (
@@ -190,7 +195,7 @@ export default function GameCarousel({
         </div>
 
         {/* fade edge */}
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-[72px] bg-gradient-to-l from-[#0D0912] to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-[72px] bg-gradient-to-l from-[#0E1015] to-transparent" />
 
         <AnimatePresence>
           {canLeft && (
@@ -200,14 +205,14 @@ export default function GameCarousel({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: DURATION.fast, ease: EASE.out }}
-              className="absolute left-[2px] top-[42%] -translate-y-1/2"
+              className="absolute left-[2px] top-[42%] -translate-y-1/2 z-20"
             >
               <Tooltip label="Previous">
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.94 }}
                   onClick={() => step(-1)}
-                  className="flex h-[30px] w-[30px] items-center justify-center rounded-full border border-[rgba(217,198,234,0.12)] bg-black/50 text-[#D9C6EA]/85 shadow-[0_10px_28px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+                  className="flex h-[32px] w-[32px] items-center justify-center rounded-full border border-white/10 bg-[#161922]/90 text-[#8E929E] shadow-[0_10px_28px_rgba(0,0,0,0.6)] backdrop-blur-xl hover:text-white hover:border-[#FF6B2B]/40"
                   aria-label="previous"
                 >
                   <ChevronLeft size={16} />
@@ -225,14 +230,14 @@ export default function GameCarousel({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: DURATION.fast, ease: EASE.out }}
-              className="absolute right-[2px] top-[42%] -translate-y-1/2"
+              className="absolute right-[2px] top-[42%] -translate-y-1/2 z-20"
             >
               <Tooltip label="Next">
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.94 }}
                   onClick={() => step(1)}
-                  className="flex h-[30px] w-[30px] items-center justify-center rounded-full border border-[rgba(217,198,234,0.12)] bg-black/50 text-[#D9C6EA]/85 shadow-[0_10px_28px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+                  className="flex h-[32px] w-[32px] items-center justify-center rounded-full border border-white/10 bg-[#161922]/90 text-[#8E929E] shadow-[0_10px_28px_rgba(0,0,0,0.6)] backdrop-blur-xl hover:text-white hover:border-[#FF6B2B]/40"
                   aria-label="next"
                 >
                   <ChevronRight size={16} />

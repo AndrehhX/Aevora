@@ -40,18 +40,18 @@ export default function GameCard({
       transition={{ delay: 0.2 + index * CARD_STAGGER, duration: 0.45, ease: EASE.out }}
       onClick={() => onSelect(game.id)}
       onMouseEnter={() => onFocus?.(index)}
-      className="group w-[clamp(100px,8vw,140px)] shrink-0 cursor-pointer snap-start"
+      className="group w-[clamp(130px,11vw,175px)] shrink-0 cursor-pointer snap-start"
       data-cursor="interactive"
     >
       <motion.div
         whileHover={{ scale: 1.045, y: -4 }}
         whileTap={{ scale: 0.97 }}
         transition={SPRING.soft}
-        className={`relative aspect-[2/3] w-full overflow-hidden rounded-[16px] border bg-[#17101F] transition-all duration-300 ${
+        className={`relative aspect-[2/3] w-full overflow-hidden rounded-[20px] border bg-[#15181F] transition-all duration-300 ${
           selected
-            ? 'border-[#A07CC1]/90 shadow-[0_16px_40px_-8px_rgba(160,124,193,0.45),inset_0_0_16px_rgba(160,124,193,0.25)] ring-1 ring-[#A07CC1]/50'
-            : 'border-white/[0.08] shadow-[0_14px_32px_-12px_rgba(0,0,0,0.8)] group-hover:border-[#A07CC1]/50 group-hover:shadow-[0_20px_44px_-10px_rgba(160,124,193,0.30)]'
-        } ${focused ? 'ring-2 ring-[rgba(190,160,216,0.9)] ring-offset-2 ring-offset-[#0D0912]' : ''}`}
+            ? 'border-[#FF6B2B] shadow-[0_16px_36px_-8px_rgba(255,107,43,0.4),inset_0_0_16px_rgba(255,107,43,0.15)] ring-2 ring-[#FF6B2B]/40'
+            : 'border-white/[0.08] shadow-[0_14px_32px_-12px_rgba(0,0,0,0.8)] group-hover:border-[#FF6B2B]/40 group-hover:shadow-[0_20px_44px_-10px_rgba(255,107,43,0.25)]'
+        } ${focused ? 'ring-2 ring-[#FFA043] ring-offset-2 ring-offset-[#0E1015]' : ''}`}
       >
         <SmartImage
           candidates={coverCandidates}
@@ -65,14 +65,14 @@ export default function GameCard({
         />
 
         {/* Ambient bottom gradient for title readability */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/15 opacity-90 transition-opacity duration-300 group-hover:opacity-75" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-85 transition-opacity duration-300 group-hover:opacity-70" />
 
         {/* Specular sheen on top edge */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-40 group-hover:opacity-100 transition-opacity duration-300" />
 
         {/* Installed indicator pill */}
         {installed && (
-          <span className="absolute top-2 left-2 flex h-2 w-2 items-center justify-center">
+          <span className="absolute top-2.5 left-2.5 flex h-2 w-2 items-center justify-center">
             <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
             <span className="relative h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
           </span>
@@ -80,7 +80,7 @@ export default function GameCard({
 
         {/* Active glowing border inset */}
         <div
-          className={`pointer-events-none absolute inset-0 rounded-[16px] transition-all duration-300 ${
+          className={`pointer-events-none absolute inset-0 rounded-[20px] transition-all duration-300 ${
             selected
               ? 'ring-1 ring-inset ring-white/20'
               : 'group-hover:ring-1 group-hover:ring-inset group-hover:ring-white/10'
@@ -89,8 +89,8 @@ export default function GameCard({
       </motion.div>
 
       <div
-        className={`mt-2 truncate px-1 text-center text-[11.5px] font-semibold tracking-wide transition-colors duration-200 ${
-          selected ? 'text-white' : 'text-[#D9C6EA]/75 group-hover:text-white'
+        className={`mt-2.5 truncate px-1 text-center text-[12px] font-semibold tracking-wide transition-colors duration-200 ${
+          selected ? 'text-white' : 'text-[#8E929E] group-hover:text-white'
         }`}
       >
         {game.title}

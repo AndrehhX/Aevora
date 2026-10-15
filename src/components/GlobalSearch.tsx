@@ -75,13 +75,13 @@ export default function GlobalSearch({
     <div ref={ref} className="relative w-[min(400px,42%)] min-w-[190px] max-w-full">
       <motion.div
         animate={{
-          scale: focused ? 1.02 : 1,
-          borderColor: focused ? 'rgba(160,124,193,0.55)' : 'rgba(217,198,234,0.10)',
+          scale: focused ? 1.01 : 1,
+          borderColor: focused ? 'rgba(255, 107, 43, 0.6)' : 'rgba(255, 255, 255, 0.08)',
         }}
         transition={{ duration: DURATION.micro }}
-        className="flex items-center gap-2 rounded-full border bg-[rgba(23,16,31,0.66)] py-[6px] pl-4 pr-2 shadow-[0_8px_28px_-10px_rgba(0,0,0,0.7)] backdrop-blur-xl"
+        className="flex items-center gap-2 rounded-full border bg-[#171922]/90 py-[7px] pl-4 pr-2.5 shadow-[0_8px_24px_-6px_rgba(0,0,0,0.8)] backdrop-blur-xl"
       >
-        <Search size={13} className="shrink-0 text-[#BEA0D8]/40" />
+        <Search size={14} className="shrink-0 text-[#8E929E]" />
         <input
           id="global-search"
           value={value}
@@ -98,11 +98,11 @@ export default function GlobalSearch({
               choose(results[activeIndex].id);
             }
           }}
-          placeholder="Search"
+          placeholder="Search games..."
           aria-label="Global search"
           aria-expanded={open}
           aria-activedescendant={open && results[activeIndex] ? `gs-${results[activeIndex].id}` : undefined}
-          className="w-full bg-transparent text-center text-[12px] text-[#F1EAF8] outline-none placeholder:text-[#BEA0D8]/50"
+          className="w-full bg-transparent text-[12.5px] font-normal text-white outline-none placeholder:text-[#8E929E]"
         />
         {value.length > 0 && (
           <motion.button
@@ -112,7 +112,7 @@ export default function GlobalSearch({
             whileTap={{ scale: 0.9 }}
             onClick={() => onChange('')}
             aria-label="Clear search"
-            className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-[rgba(74,53,96,0.30)] text-[#D9C6EA]/70 transition-colors hover:text-[#F1EAF8]"
+            className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full bg-white/10 text-[#8E929E] transition-colors hover:text-white"
           >
             <X size={12} />
           </motion.button>
@@ -125,7 +125,7 @@ export default function GlobalSearch({
             aria-label="Search filters"
             aria-expanded={filterOpen}
             className={`flex h-[22px] w-[28px] shrink-0 items-center justify-center rounded-full transition-colors ${
-              filter === 'all' ? 'bg-[rgba(74,53,96,0.30)] text-[#D9C6EA]/60' : 'bg-[rgba(130,99,161,0.45)] text-[#F1EAF8]'
+              filter === 'all' ? 'bg-white/5 text-[#8E929E] hover:text-white' : 'bg-[#FF6B2B] text-white shadow-[0_0_12px_rgba(255,107,43,0.5)]'
             }`}
           >
             <SlidersHorizontal size={12} />
@@ -141,7 +141,7 @@ export default function GlobalSearch({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: DURATION.micro, ease: EASE.out }}
-            className="absolute right-0 top-[38px] z-[60] w-[150px] overflow-hidden rounded-[12px] border border-[rgba(217,198,234,0.12)] bg-[rgba(23,16,31,0.97)] p-1 shadow-2xl backdrop-blur-2xl"
+            className="absolute right-0 top-[40px] z-[60] w-[150px] overflow-hidden rounded-[14px] border border-white/10 bg-[#171922] p-1 shadow-2xl backdrop-blur-2xl"
           >
             {(
               [

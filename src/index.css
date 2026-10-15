@@ -3,34 +3,35 @@
 @tailwind utilities;
 
 :root{
-  /* Aevora color identity */
-  --aevora-bg: #0D0912;
-  --aevora-surface: #17101F;
-  --aevora-deep: #4A3560;
-  --aevora-purple-dark: #654A7F;
-  --aevora-purple: #8263A1;
-  --aevora-lavender: #A07CC1;
-  --aevora-lavender-soft: #BEA0D8;
-  --aevora-lavender-pale: #D9C6EA;
-  --aevora-text: #F1EAF8;
+  /* Modern Obsidian & Orange Identity (Reference Design) */
+  --aevora-bg: #0E1015;
+  --aevora-surface: #15181F;
+  --aevora-card: #1B1E26;
+  --aevora-card-hover: #222631;
+  --aevora-orange: #FF6B2B;
+  --aevora-orange-glow: rgba(255, 107, 43, 0.35);
+  --aevora-amber: #FFA043;
+  --aevora-text: #FFFFFF;
+  --aevora-text-muted: #8E929E;
+  --aevora-text-dim: #5C606D;
 
   /* derived surface / border / text tokens (dark-first) */
   --bg: var(--aevora-bg);
   --bg-2: var(--aevora-surface);
-  --surface: rgba(23, 16, 31, 0.66);
-  --surface-hover: rgba(74, 53, 96, 0.32);
+  --surface: rgba(21, 24, 31, 0.78);
+  --surface-hover: rgba(34, 38, 49, 0.65);
   --surface-solid: var(--aevora-surface);
-  --border: rgba(217, 198, 234, 0.10);
-  --border-soft: rgba(190, 160, 216, 0.08);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-soft: rgba(255, 255, 255, 0.05);
   --text-primary: var(--aevora-text);
-  --text-secondary: var(--aevora-lavender-pale);
-  --text-muted: rgba(190, 160, 216, 0.62);
-  --accent: var(--aevora-purple);
-  --accent-2: var(--aevora-lavender);
-  --accent-glow: rgba(190, 160, 216, 0.28);
+  --text-secondary: #C4C8D4;
+  --text-muted: var(--aevora-text-muted);
+  --accent: var(--aevora-orange);
+  --accent-2: var(--aevora-amber);
+  --accent-glow: var(--aevora-orange-glow);
   --radius-s: 8px;
   --radius-m: 14px;
-  --radius-l: 20px;
+  --radius-l: 22px;
 }
 
 *{ box-sizing:border-box; }
@@ -51,20 +52,20 @@ body{
 .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
 
 .glass{
-  background: rgba(23, 16, 31, 0.75);
-  backdrop-filter: blur(22px) saturate(1.3);
-  -webkit-backdrop-filter: blur(22px) saturate(1.3);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(23, 26, 34, 0.75);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: 0 16px 40px -10px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 .aevora-frame{
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 24px;
-  background: linear-gradient(145deg, rgba(23,16,31,0.52), rgba(13,9,18,0.36));
-  box-shadow: 0 32px 100px -30px rgba(0,0,0,0.95), inset 0 1px 0 rgba(255,255,255,0.08);
-  backdrop-filter: blur(18px) saturate(1.15);
-  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 28px;
+  background: radial-gradient(1200px 600px at 75% -10%, rgba(255, 87, 34, 0.12), transparent 70%), linear-gradient(160deg, #12141A 0%, #0E1015 100%);
+  box-shadow: 0 32px 100px -25px rgba(0,0,0,0.95), inset 0 1px 0 rgba(255,255,255,0.07);
+  backdrop-filter: blur(20px) saturate(1.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
 }
 
 [data-aevora-reduced="true"] *,
@@ -77,7 +78,7 @@ body{
 
 /* elegant keyboard focus — lavender, never the default outline */
 :focus-visible{
-  outline: 1px solid rgba(190, 160, 216, 0.65);
+  outline: 1px solid rgba(255, 107, 43, 0.7);
   outline-offset: 2px;
   border-radius: 6px;
 }

@@ -20,59 +20,6 @@ Los binarios de producción de la versión **v0.1.0** listos para usar se encuen
 
 ---
 
-## 🔄 ¿Cómo funciona la Auto-Actualización desde GitHub?
-
-Sí, **se puede configurar para que cada vez que hagas un update en GitHub, la app detecte la nueva versión, la descargue y se actualice sola**.
-
-Tauri 2 soporta esto de forma nativa a través del plugin oficial **Updater** y **GitHub Releases**:
-
-### 1. El Flujo de Actualización Automática
-
-```mermaid
-flowchart TD
-    A["Desarrollador sube cambios / tag (v0.1.1) a GitHub"] --> B["GitHub Actions compila automáticamente el .exe"]
-    B --> C["GitHub Actions genera 'latest.json' con firma digital y lo sube al Release"]
-    C --> D["El usuario abre Aevora en su PC"]
-    D --> E{"¿Existe versión superior en GitHub?"}
-    E -- Sí --> F["Aevora avisa: 'Nueva versión disponible'"]
-    F --> G["Descarga silenciosa en segundo plano, instalación y reinicio"]
-    E -- No --> H["Inicia normalmente"]
-```
-
-### 2. Configuración en GitHub Actions (Ya incluida)
-
-Se ha añadido el workflow listo para usar en [`.github/workflows/release.yml`](file:///.github/workflows/release.yml).
-
-Cada vez que publiques una nueva versión:
-```bash
-git tag v0.1.1
-git push origin v0.1.1
-```
-GitHub Actions automáticamente compilará el instalador para Windows, firmará el paquete y publicará el nuevo Release en GitHub adjuntando el instalador y el manifiesto `latest.json` para el auto-updater.
-
-### 3. Activar el plugin de Auto-Update en la app
-
-Para vincular tu repositorio específico de GitHub con el updater de Tauri:
-1. Genera las claves criptográficas de actualización ejecutando una sola vez:
-   ```bash
-   npx @tauri-apps/cli signer generate -w ~/.tauri/aevora.key
-   ```
-2. Agrega la clave pública resultante en `src-tauri/tauri.conf.json`:
-   ```json
-   {
-     "plugins": {
-       "updater": {
-         "endpoints": [
-           "https://github.com/<TU_USUARIO>/<TU_REPOSITORIO>/releases/latest/download/latest.json"
-         ],
-         "pubkey": "<TU_CLAVE_PUBLICA_AQUI>"
-       }
-     }
-   }
-   ```
-3. Agrega la clave privada en los **Secrets** de tu repositorio en GitHub como `TAURI_SIGNING_PRIVATE_KEY`.
-
----
 
 ## 💎 Características y Calidad Super Premium
 

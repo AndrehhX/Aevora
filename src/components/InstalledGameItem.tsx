@@ -56,17 +56,17 @@ export default function InstalledGameItem({
         compact ? 'justify-center' : ''
       } ${
         active
-          ? 'bg-gradient-to-r from-[#8263A1]/35 to-[#A07CC1]/20 border border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.4)]'
+          ? 'bg-gradient-to-r from-[#FF6B2B]/20 to-[#FF6B2B]/5 border border-[#FF6B2B]/30 shadow-[0_4px_16px_rgba(255,107,43,0.15)]'
           : 'border border-transparent hover:bg-white/[0.04] hover:border-white/[0.05]'
       }`}
     >
       {/* active indicator */}
       <span
-        className={`absolute -left-1 top-1/2 h-[18px] w-[3.5px] -translate-y-1/2 rounded-full bg-gradient-to-b from-[#BEA0D8] to-[#8263A1] transition-all duration-300 ${
-          active ? 'opacity-100 shadow-[0_0_12px_rgba(190,160,216,0.8)] scale-100' : 'opacity-0 scale-50'
+        className={`absolute -left-1 top-1/2 h-[18px] w-[3.5px] -translate-y-1/2 rounded-full bg-gradient-to-b from-[#FFA043] to-[#FF6B2B] transition-all duration-300 ${
+          active ? 'opacity-100 shadow-[0_0_12px_rgba(255,107,43,0.8)] scale-100' : 'opacity-0 scale-50'
         }`}
       />
-      <span className="relative h-[32px] w-[32px] shrink-0 overflow-hidden rounded-[8px] border border-white/10 bg-[#17101F] shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
+      <span className="relative h-[32px] w-[32px] shrink-0 overflow-hidden rounded-[8px] border border-white/10 bg-[#15181F] shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
         <SmartImage
           candidates={coverCandidates}
           src={coverCandidates[0] ?? game.artwork.cover}
@@ -77,15 +77,15 @@ export default function InstalledGameItem({
         />
       </span>
       <span className={`min-w-0 flex-1 leading-tight ${compact ? 'hidden' : ''}`}>
-        <span className={`block truncate text-[11.5px] font-semibold tracking-wide ${active ? 'text-white' : 'text-[#D9C6EA]/80 group-hover:text-white'}`}>
+        <span className={`block truncate text-[11.5px] font-semibold tracking-wide ${active ? 'text-white' : 'text-[#8E929E] group-hover:text-white'}`}>
           {game.title}
         </span>
-        <span className="block truncate text-[9px] font-medium text-[#BEA0D8]/70">
+        <span className="block truncate text-[9px] font-medium text-[#8E929E]/70">
           {isInstalled(game) ? 'Installed' : game.subtitle ?? 'Steam library'}
         </span>
       </span>
       {active && !compact && (
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#A07CC1] shadow-[0_0_8px_rgba(190,160,216,0.8)]" />
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF6B2B] shadow-[0_0_8px_rgba(255,107,43,0.8)]" />
       )}
     </motion.button>
   );

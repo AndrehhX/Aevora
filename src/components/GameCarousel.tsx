@@ -12,12 +12,14 @@ export default function GameCarousel({
   onSelect,
   inertia = true,
   title = 'Special offers',
+  onLearnMore,
 }: {
   games: UnifiedGame[];
   selectedId: string;
   onSelect: (id: string) => void;
   inertia?: boolean;
   title?: string;
+  onLearnMore?: () => void;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
@@ -135,6 +137,15 @@ export default function GameCarousel({
             Featured
           </span>
         </div>
+        {onLearnMore && (
+          <button
+            type="button"
+            onClick={onLearnMore}
+            className="text-[12px] font-semibold text-[#8E929E] hover:text-[#FFA043] transition-colors"
+          >
+            Learn more
+          </button>
+        )}
       </div>
       <div className="relative">
         <div

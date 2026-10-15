@@ -15,11 +15,11 @@ describe('Steam content normalization', () => {
     });
 
     expect(assets).toEqual({
-      cover: 'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/570/library_600x900_2x.jpg',
-      coverFallback: 'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/570/library_600x900.jpg',
+      cover: 'https://shared.steamstatic.com/store_item_assets/steam/apps/570/library_600x900_2x.jpg',
+      coverFallback: 'https://shared.steamstatic.com/store_item_assets/steam/apps/570/library_600x900.jpg',
       coverFallback2: 'https://cdn.test/header.jpg',
-      hero: 'https://cdn.test/background.jpg',
-      heroFallback: 'https://cdn.test/header.jpg',
+      hero: 'https://shared.steamstatic.com/store_item_assets/steam/apps/570/library_hero.jpg',
+      heroFallback: 'https://cdn.test/background.jpg',
       logo: 'https://cdn.test/logo.png',
     });
   });
@@ -27,11 +27,11 @@ describe('Steam content normalization', () => {
   it('uses the official app logo path and creates a CDN fallback for missing background', () => {
     const assets = resolveSteamAssets({ appid: 730, name: 'Counter-Strike 2', header_image: 'https://cdn.test/header.jpg' });
 
-    expect(assets.logo).toBe('https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/730/logo.png');
-    expect(assets.cover).toBe('https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/730/library_600x900_2x.jpg');
-    expect(assets.coverFallback).toBe('https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/730/library_600x900.jpg');
+    expect(assets.logo).toBe('https://shared.steamstatic.com/store_item_assets/steam/apps/730/logo.png');
+    expect(assets.cover).toBe('https://shared.steamstatic.com/store_item_assets/steam/apps/730/library_600x900_2x.jpg');
+    expect(assets.coverFallback).toBe('https://shared.steamstatic.com/store_item_assets/steam/apps/730/library_600x900.jpg');
     expect(assets.coverFallback2).toBe('https://cdn.test/header.jpg');
-    expect(assets.hero).toContain('/730/library_hero.jpg');
+    expect(assets.hero).toBe('https://shared.steamstatic.com/store_item_assets/steam/apps/730/library_hero.jpg');
     expect(assets.heroFallback).toBe('https://cdn.test/header.jpg');
   });
 

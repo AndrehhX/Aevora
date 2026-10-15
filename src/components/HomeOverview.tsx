@@ -46,6 +46,7 @@ export default function HomeOverview({
         <div className="absolute inset-0 bg-gradient-to-br from-[rgba(130,99,161,0.20)] via-transparent to-transparent pointer-events-none" />
         <div className="relative flex h-full gap-3.5">
           <SmartImage
+            candidates={coverCandidates}
             src={coverCandidates[0] ?? selectedGame.artwork.cover}
             fallback={coverCandidates[1] ?? selectedGame.artwork.coverFallback}
             fallback2={coverCandidates[2] ?? selectedGame.artwork.coverFallback2}

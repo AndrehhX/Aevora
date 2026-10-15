@@ -54,6 +54,7 @@ export default function GameCard({
         } ${focused ? 'ring-2 ring-[rgba(190,160,216,0.9)] ring-offset-2 ring-offset-[#0D0912]' : ''}`}
       >
         <SmartImage
+          candidates={coverCandidates}
           src={coverCandidates[0] ?? game.artwork.cover}
           fallback={coverCandidates[1] ?? game.artwork.coverFallback}
           fallback2={coverCandidates[2] ?? game.artwork.coverFallback2}

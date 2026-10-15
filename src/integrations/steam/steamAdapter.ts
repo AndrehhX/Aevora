@@ -71,9 +71,8 @@ function mapConnection(response: SteamConnectionResponse): ConnectionState {
 
 function normalizeOwnedGame(game: SteamOwnedGame, details?: SteamAppDetails): UnifiedGame {
   const appId = String(game.appid);
-  const fallbackCover = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`;
-  const fallbackHero = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/library_hero.jpg`;
   const fallbackLogo = game.img_logo_url ? `${STEAM_COMMUNITY_ASSET_BASE}/${appId}/${game.img_logo_url}.jpg` : undefined;
+  const gameIcon = game.img_icon_url ? `${STEAM_COMMUNITY_ASSET_BASE}/${appId}/${game.img_icon_url}.jpg` : undefined;
   const artwork = details
     ? resolveSteamAssets(details)
     : resolveSteamAssets({
@@ -81,6 +80,9 @@ function normalizeOwnedGame(game: SteamOwnedGame, details?: SteamAppDetails): Un
         name: game.name,
         logo: fallbackLogo,
       });
+  if (gameIcon) {
+    artwork.icon = gameIcon;
+  }
   const genres = details?.genres?.map((genre) => genre.description).filter((genre): genre is string => !!genre?.trim());
   return {
     id: `steam:${appId}`,

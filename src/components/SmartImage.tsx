@@ -5,20 +5,35 @@ export function SmartImage({
   src,
   fallback,
   fallback2,
+  candidates: propCandidates,
   alt,
   className,
   style,
   loading = 'lazy',
 }: {
-  src: string;
-  fallback: string;
+  src?: string;
+  fallback?: string;
   fallback2?: string;
+  candidates?: string[];
   alt: string;
   className?: string;
   style?: React.CSSProperties;
   loading?: 'eager' | 'lazy';
 }) {
-  const candidates = useMemo(() => getImageCandidates(src, fallback, fallback2), [src, fallback, fallback2]);
+  const candidates = useMemo(() => {
+    if (propCandidates && propCandidates.length > 0) {
+      const seen = new Set<string>();
+      return propCandidates
+        .map((candidate) => candidate?.trim() ?? '')
+        .filter((candidate) => {
+          if (!candidate || seen.has(candidate)) return false;
+          seen.add(candidate);
+          return true;
+        });
+    }
+    return getImageCandidates(src ?? '', fallback ?? '', fallback2);
+  }, [propCandidates, src, fallback, fallback2]);
+
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {

@@ -69,8 +69,8 @@ describe('SteamAdapter', () => {
         title: 'Dota 2',
         description: 'A real Steam description.',
         artwork: {
-          cover: 'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/570/library_600x900_2x.jpg',
-          hero: 'https://cdn.steam.test/background.jpg',
+          cover: 'https://shared.steamstatic.com/store_item_assets/steam/apps/570/library_600x900_2x.jpg',
+          hero: 'https://shared.steamstatic.com/store_item_assets/steam/apps/570/library_hero.jpg',
           logo: 'https://cdn.steam.test/logo.png',
         },
         metadata: { developer: 'Valve', publisher: 'Valve', genres: ['Action'] },

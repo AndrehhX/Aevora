@@ -14,9 +14,10 @@ function getGameHeroCandidates(game: UnifiedGame): string[] {
   const steamEntry = game.providers.find((p) => p.provider === 'steam');
   const appId = steamEntry ? steamEntry.externalId : game.id.startsWith('steam:') ? game.id.slice(6) : undefined;
   const list: string[] = [];
-  if (game.artwork.hero) list.push(game.artwork.hero);
   if (appId) {
     list.push(...getSteamHeroCandidates(appId, game.artwork.hero, game.artwork.heroFallback));
+  } else if (game.artwork.hero) {
+    list.push(game.artwork.hero);
   }
   if (game.artwork.heroFallback) list.push(game.artwork.heroFallback);
   if (game.artwork.coverFallback) list.push(game.artwork.coverFallback);
@@ -204,7 +205,7 @@ export default function HeroBanner({
                 draggable={false}
                 loading="eager"
                 decoding="async"
-                className="absolute inset-0 h-[114%] w-[114%] object-cover object-[50%_35%]"
+                className="absolute -inset-[7%] h-[114%] w-[114%] object-cover object-center"
                 style={{ imageRendering: 'auto' }}
               />
             ) : (
@@ -237,15 +238,15 @@ export default function HeroBanner({
             transition={{ duration: 0.6, ease: EASE.out }}
             className="pointer-events-none absolute inset-0"
             style={{
-              background: `radial-gradient(800px 380px at 75% 20%, rgba(${ambientColor},0.28), transparent 70%), radial-gradient(400px 300px at 20% 90%, rgba(${ambientColor},0.15), transparent 70%)`,
+              background: `radial-gradient(800px 380px at 75% 20%, rgba(${ambientColor},0.16), transparent 75%)`,
             }}
           />
         </AnimatePresence>
 
-        {/* High-end cinematic vignetting and gradients */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0D0912]/90 via-[#0D0912]/30 to-black/20" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0D0912]/80 via-transparent to-black/30" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-[#0D0912] via-[#0D0912]/60 to-transparent" />
+        {/* Clean, balanced cinematic gradient: dark left for logo legibility, clear artwork in center/right */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-[55%] bg-gradient-to-r from-[#0D0912]/85 via-[#0D0912]/35 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-[#0D0912] via-[#0D0912]/45 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent h-[30%]" />
 
         {/* Logo or Title Brand (Top Left) */}
         <div className="pointer-events-none absolute left-[30px] top-[40px] select-none">

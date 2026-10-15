@@ -22,11 +22,23 @@ export default function InstalledGameItem({
   const appId = steamEntry ? steamEntry.externalId : game.id.startsWith('steam:') ? game.id.slice(6) : undefined;
   
   const coverCandidates = useMemo(() => {
+    const list: string[] = [];
+    if (game.artwork.icon) list.push(game.artwork.icon);
     if (appId) {
-      return getSteamCoverCandidates(appId, game.artwork.cover, game.artwork.coverFallback, game.artwork.coverFallback2);
+      list.push(...getSteamCoverCandidates(appId, game.artwork.cover, game.artwork.coverFallback, game.artwork.coverFallback2, game.artwork.icon));
+    } else {
+      if (game.artwork.cover) list.push(game.artwork.cover);
+      if (game.artwork.coverFallback) list.push(game.artwork.coverFallback);
+      if (game.artwork.coverFallback2) list.push(game.artwork.coverFallback2);
     }
-    return [game.artwork.cover, game.artwork.coverFallback, game.artwork.coverFallback2].filter(Boolean) as string[];
-  }, [appId, game.artwork.cover, game.artwork.coverFallback, game.artwork.coverFallback2]);
+    const seen = new Set<string>();
+    return list.filter((url) => {
+      const clean = url?.trim();
+      if (!clean || seen.has(clean)) return false;
+      seen.add(clean);
+      return true;
+    });
+  }, [appId, game.artwork.icon, game.artwork.cover, game.artwork.coverFallback, game.artwork.coverFallback2]);
 
   return (
     <motion.button
@@ -56,6 +68,7 @@ export default function InstalledGameItem({
       />
       <span className="relative h-[32px] w-[32px] shrink-0 overflow-hidden rounded-[8px] border border-white/10 bg-[#17101F] shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
         <SmartImage
+          candidates={coverCandidates}
           src={coverCandidates[0] ?? game.artwork.cover}
           fallback={coverCandidates[1] ?? game.artwork.coverFallback}
           fallback2={coverCandidates[2] ?? game.artwork.coverFallback2}

@@ -7,28 +7,29 @@ export interface GameArtwork {
   hero: string;
   heroFallback: string;
   logo?: string;
+  icon?: string;
 }
 
-export const STEAM_ASSET_BASE = 'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps';
+export const STEAM_ASSET_BASE = 'https://shared.steamstatic.com/store_item_assets/steam/apps';
 export const STEAM_AKAMAI_BASE = 'https://cdn.akamai.steamstatic.com/steam/apps';
 export const STEAM_MEDIA_BASE = 'https://cdn.cloudflare.steamstatic.com/steam/apps';
+export const STEAM_AKAMAIHD_BASE = 'https://steamcdn-a.akamaihd.net/steam/apps';
 
 export function resolveSteamAssets(details: SteamAppDetails): GameArtwork {
   const appId = String(details.appid);
   const header = details.header_image ?? `${STEAM_ASSET_BASE}/${appId}/header.jpg`;
-  // `capsule_image` is a wide store banner. Library cards are portrait,
-  // so use Steam's native library artwork instead of stretching/cropping it.
   const cover = `${STEAM_ASSET_BASE}/${appId}/library_600x900_2x.jpg`;
   const coverFallback = `${STEAM_ASSET_BASE}/${appId}/library_600x900.jpg`;
-  const hero = details.background_raw ?? details.background ?? `${STEAM_ASSET_BASE}/${appId}/library_hero.jpg`;
+  // Use official Steam Library Hero banner (1920x620) as the primary hero image.
+  // details.background_raw / details.background is the dim store page backdrop.
+  const hero = `${STEAM_ASSET_BASE}/${appId}/library_hero.jpg`;
+  const heroFallback = details.background_raw ?? details.background ?? header;
   return {
     cover,
     coverFallback,
     coverFallback2: header,
     hero,
-    heroFallback: header,
-    // Steam sometimes omits `logo` even when the official app asset exists.
-    // Try the official transparent asset before falling back to the title.
+    heroFallback,
     logo: details.logo ?? `${STEAM_ASSET_BASE}/${appId}/logo.png`,
   };
 }
@@ -36,17 +37,26 @@ export function resolveSteamAssets(details: SteamAppDetails): GameArtwork {
 export function getSteamHeroCandidates(appId: string | number, primaryHero?: string, fallbackHero?: string): string[] {
   const id = String(appId);
   const candidates: string[] = [];
-  if (primaryHero) candidates.push(primaryHero);
+  
+  // 1. Official Steam Library Hero (1920x620) across all mirrors
   candidates.push(
     `${STEAM_ASSET_BASE}/${id}/library_hero.jpg`,
     `${STEAM_AKAMAI_BASE}/${id}/library_hero.jpg`,
     `${STEAM_MEDIA_BASE}/${id}/library_hero.jpg`,
+    `${STEAM_AKAMAIHD_BASE}/${id}/library_hero.jpg`,
+  );
+  
+  if (primaryHero) candidates.push(primaryHero);
+
+  // 2. High-res page background / screenshots / capsules
+  candidates.push(
     `${STEAM_ASSET_BASE}/${id}/page_bg_generated_v6b.jpg`,
     `${STEAM_AKAMAI_BASE}/${id}/page_bg_generated_v6b.jpg`,
     `${STEAM_ASSET_BASE}/${id}/capsule_616x353.jpg`,
+    `${STEAM_ASSET_BASE}/${id}/header.jpg`,
+    `${STEAM_AKAMAI_BASE}/${id}/header.jpg`,
   );
   if (fallbackHero) candidates.push(fallbackHero);
-  candidates.push(`${STEAM_ASSET_BASE}/${id}/header.jpg`);
 
   const seen = new Set<string>();
   return candidates.filter((url) => {
@@ -57,7 +67,13 @@ export function getSteamHeroCandidates(appId: string | number, primaryHero?: str
   });
 }
 
-export function getSteamCoverCandidates(appId: string | number, primaryCover?: string, fallbackCover?: string, fallbackCover2?: string): string[] {
+export function getSteamCoverCandidates(
+  appId: string | number,
+  primaryCover?: string,
+  fallbackCover?: string,
+  fallbackCover2?: string,
+  icon?: string
+): string[] {
   const id = String(appId);
   const candidates: string[] = [];
   if (primaryCover) candidates.push(primaryCover);
@@ -68,11 +84,13 @@ export function getSteamCoverCandidates(appId: string | number, primaryCover?: s
     `${STEAM_ASSET_BASE}/${id}/library_600x900.jpg`,
     `${STEAM_AKAMAI_BASE}/${id}/library_600x900.jpg`,
     `${STEAM_ASSET_BASE}/${id}/library_capsule.jpg`,
+    `${STEAM_ASSET_BASE}/${id}/header.jpg`,
+    `${STEAM_AKAMAI_BASE}/${id}/header.jpg`,
     `${STEAM_ASSET_BASE}/${id}/capsule_616x353.jpg`,
   );
+  if (icon) candidates.push(icon);
   if (fallbackCover) candidates.push(fallbackCover);
   if (fallbackCover2) candidates.push(fallbackCover2);
-  candidates.push(`${STEAM_ASSET_BASE}/${id}/header.jpg`);
 
   const seen = new Set<string>();
   return candidates.filter((url) => {

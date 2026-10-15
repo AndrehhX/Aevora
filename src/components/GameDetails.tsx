@@ -141,6 +141,7 @@ export default function GameDetails({
         <div className="relative h-[220px] w-[148px] shrink-0 overflow-hidden rounded-[16px] border border-white/15 bg-[rgba(74,53,96,0.3)] shadow-[0_20px_45px_-10px_rgba(0,0,0,0.85)]">
           {game.artwork.cover ? (
             <SmartImage
+              candidates={coverCandidates}
               src={coverCandidates[0] ?? game.artwork.cover}
               fallback={coverCandidates[1] ?? game.artwork.coverFallback}
               fallback2={coverCandidates[2] ?? game.artwork.coverFallback2}

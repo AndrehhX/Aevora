@@ -22,6 +22,8 @@ export interface UnifiedGame {
     heroFallback: string;
     /** Transparent logo/wordmark. Preferred over title in hero. */
     logo?: string;
+    /** Small square app icon (32x32) for client lists. */
+    icon?: string;
   };
   branding?: {
     logoMaxWidth?: number;

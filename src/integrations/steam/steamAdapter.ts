@@ -74,14 +74,13 @@ function normalizeOwnedGame(game: SteamOwnedGame, details?: SteamAppDetails): Un
   const fallbackCover = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`;
   const fallbackHero = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/library_hero.jpg`;
   const fallbackLogo = game.img_logo_url ? `${STEAM_COMMUNITY_ASSET_BASE}/${appId}/${game.img_logo_url}.jpg` : undefined;
-  const artwork = details ? resolveSteamAssets(details) : {
-    cover: fallbackCover,
-    coverFallback: fallbackCover,
-    coverFallback2: fallbackCover,
-    hero: fallbackHero,
-    heroFallback: fallbackCover,
-    logo: fallbackLogo,
-  };
+  const artwork = details
+    ? resolveSteamAssets(details)
+    : resolveSteamAssets({
+        appid: game.appid,
+        name: game.name,
+        logo: fallbackLogo,
+      });
   const genres = details?.genres?.map((genre) => genre.description).filter((genre): genre is string => !!genre?.trim());
   return {
     id: `steam:${appId}`,

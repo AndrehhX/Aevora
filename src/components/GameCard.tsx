@@ -1,7 +1,10 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import type { UnifiedGame } from '../domain/game';
 import { CARD_STAGGER, EASE, SPRING } from '../motion/presets';
 import { SmartImage } from './SmartImage';
+import { getSteamCoverCandidates } from '../integrations/steam/steamAssets';
+import { isInstalled } from '../domain/library';
 
 export default function GameCard({
   game,
@@ -18,47 +21,75 @@ export default function GameCard({
   onSelect: (id: string) => void;
   onFocus?: (index: number) => void;
 }) {
+  const steamEntry = game.providers.find((p) => p.provider === 'steam');
+  const appId = steamEntry ? steamEntry.externalId : game.id.startsWith('steam:') ? game.id.slice(6) : undefined;
+  
+  const coverCandidates = useMemo(() => {
+    if (appId) {
+      return getSteamCoverCandidates(appId, game.artwork.cover, game.artwork.coverFallback, game.artwork.coverFallback2);
+    }
+    return [game.artwork.cover, game.artwork.coverFallback, game.artwork.coverFallback2].filter(Boolean) as string[];
+  }, [appId, game.artwork.cover, game.artwork.coverFallback, game.artwork.coverFallback2]);
+
+  const installed = isInstalled(game);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3 + index * CARD_STAGGER, duration: 0.45, ease: EASE.out }}
+      transition={{ delay: 0.2 + index * CARD_STAGGER, duration: 0.45, ease: EASE.out }}
       onClick={() => onSelect(game.id)}
       onMouseEnter={() => onFocus?.(index)}
-      className="group w-[clamp(96px,7.5vw,134px)] shrink-0 cursor-pointer snap-start"
+      className="group w-[clamp(100px,8vw,140px)] shrink-0 cursor-pointer snap-start"
       data-cursor="interactive"
     >
       <motion.div
-        whileHover={{ scale: 1.035, y: -3 }}
+        whileHover={{ scale: 1.045, y: -4 }}
         whileTap={{ scale: 0.97 }}
         transition={SPRING.soft}
-        className={`relative aspect-[2/3] w-full overflow-hidden rounded-[14px] border bg-[#17101F] shadow-[0_14px_36px_-14px_rgba(0,0,0,0.8)] transition-[box-shadow,border-color,filter] duration-200 ${
+        className={`relative aspect-[2/3] w-full overflow-hidden rounded-[16px] border bg-[#17101F] transition-all duration-300 ${
           selected
-            ? 'border-[#A07CC1]/60 shadow-[0_18px_44px_-12px_rgba(190,160,216,0.30)]'
-            : 'border-[rgba(217,198,234,0.10)] group-hover:border-[rgba(190,160,216,0.35)] group-hover:shadow-[0_18px_44px_-12px_rgba(190,160,216,0.28)]'
-        } ${focused ? 'ring-1 ring-[rgba(190,160,216,0.8)] ring-offset-2 ring-offset-[#0D0912]' : ''}`}
+            ? 'border-[#A07CC1]/90 shadow-[0_16px_40px_-8px_rgba(160,124,193,0.45),inset_0_0_16px_rgba(160,124,193,0.25)] ring-1 ring-[#A07CC1]/50'
+            : 'border-white/[0.08] shadow-[0_14px_32px_-12px_rgba(0,0,0,0.8)] group-hover:border-[#A07CC1]/50 group-hover:shadow-[0_20px_44px_-10px_rgba(160,124,193,0.30)]'
+        } ${focused ? 'ring-2 ring-[rgba(190,160,216,0.9)] ring-offset-2 ring-offset-[#0D0912]' : ''}`}
       >
         <SmartImage
-          src={game.artwork.cover}
-          fallback={game.artwork.coverFallback}
-          fallback2={game.artwork.coverFallback2}
+          src={coverCandidates[0] ?? game.artwork.cover}
+          fallback={coverCandidates[1] ?? game.artwork.coverFallback}
+          fallback2={coverCandidates[2] ?? game.artwork.coverFallback2}
           alt={game.title}
-          className={`h-full w-full object-cover object-top transition-all duration-200 group-hover:brightness-110 ${
-            selected ? 'brightness-[1.04]' : 'brightness-[0.96]'
+          className={`h-full w-full object-cover object-top transition-all duration-300 group-hover:scale-105 group-hover:brightness-110 ${
+            selected ? 'brightness-105 contrast-105' : 'brightness-95'
           }`}
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent opacity-80" />
+
+        {/* Ambient bottom gradient for title readability */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/15 opacity-90 transition-opacity duration-300 group-hover:opacity-75" />
+
+        {/* Specular sheen on top edge */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
+
+        {/* Installed indicator pill */}
+        {installed && (
+          <span className="absolute top-2 left-2 flex h-2 w-2 items-center justify-center">
+            <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+            <span className="relative h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+          </span>
+        )}
+
+        {/* Active glowing border inset */}
         <div
-          className={`pointer-events-none absolute inset-0 rounded-[14px] transition-all duration-200 ${
+          className={`pointer-events-none absolute inset-0 rounded-[16px] transition-all duration-300 ${
             selected
-              ? 'border border-[#A07CC1]/40 shadow-[inset_0_0_20px_rgba(190,160,216,0.12)]'
-              : 'border border-white/0 group-hover:border-[#A07CC1]/40 group-hover:shadow-[inset_0_0_20px_rgba(190,160,216,0.15)]'
+              ? 'ring-1 ring-inset ring-white/20'
+              : 'group-hover:ring-1 group-hover:ring-inset group-hover:ring-white/10'
           }`}
         />
       </motion.div>
+
       <div
-        className={`mt-1.5 truncate px-0.5 text-center text-[11px] font-medium transition-colors ${
-          selected ? 'text-[#F1EAF8]' : 'text-[#D9C6EA]/80 group-hover:text-[#F1EAF8]'
+        className={`mt-2 truncate px-1 text-center text-[11.5px] font-semibold tracking-wide transition-colors duration-200 ${
+          selected ? 'text-white' : 'text-[#D9C6EA]/75 group-hover:text-white'
         }`}
       >
         {game.title}
@@ -66,3 +97,4 @@ export default function GameCard({
     </motion.div>
   );
 }
+

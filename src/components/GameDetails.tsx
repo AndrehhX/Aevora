@@ -21,6 +21,7 @@ import Modal from './Modal';
 import ProviderBadge from './ProviderBadge';
 import { SmartImage } from './SmartImage';
 import type { LaunchResult } from '../integrations/steam/steamLaunch';
+import { getSteamCoverCandidates } from '../integrations/steam/steamAssets';
 
 type Phase = 'idle' | 'working' | 'playing';
 
@@ -106,30 +107,63 @@ export default function GameDetails({
     }
   };
 
+  const steamEntry = game.providers.find((p) => p.provider === 'steam');
+  const appId = steamEntry ? steamEntry.externalId : game.id.startsWith('steam:') ? game.id.slice(6) : undefined;
+  const coverCandidates = appId
+    ? getSteamCoverCandidates(appId, game.artwork.cover, game.artwork.coverFallback, game.artwork.coverFallback2)
+    : [game.artwork.cover, game.artwork.coverFallback, game.artwork.coverFallback2].filter(Boolean) as string[];
+
+  const ambientColor = game.ambient ?? '160,124,193';
+
   return (
-    <Modal open={open} onClose={onClose} labelledBy="game-details-title" panelClass="max-w-[600px]">
-      <div className="flex max-h-[86vh] flex-col sm:flex-row">
+    <Modal open={open} onClose={onClose} labelledBy="game-details-title" panelClass="max-w-[660px] p-0 overflow-hidden border border-white/[0.12] bg-[#140E1C] shadow-[0_36px_100px_-20px_rgba(0,0,0,0.95)]">
+      {/* Ambient header glow backdrop */}
+      <div className="relative h-[130px] w-full overflow-hidden">
+        {game.artwork.hero && (
+          <img
+            src={game.artwork.hero}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover object-center filter blur-sm brightness-75 scale-105"
+          />
+        )}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(600px 140px at 50% 0%, rgba(${ambientColor},0.4), transparent 85%), linear-gradient(180deg, rgba(20,14,28,0.2) 0%, #140E1C 100%)`,
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#140E1C] via-[#140E1C]/40 to-transparent" />
+      </div>
+
+      <div className="relative -mt-16 flex max-h-[82vh] flex-col sm:flex-row px-6 pb-6 gap-6">
         {/* artwork */}
-        <div className="relative h-[190px] w-full shrink-0 overflow-hidden bg-[rgba(74,53,96,0.25)] sm:h-auto sm:min-h-[430px] sm:w-[220px]">
+        <div className="relative h-[220px] w-[148px] shrink-0 overflow-hidden rounded-[16px] border border-white/15 bg-[rgba(74,53,96,0.3)] shadow-[0_20px_45px_-10px_rgba(0,0,0,0.85)]">
           {game.artwork.cover ? (
-            <SmartImage src={game.artwork.cover} fallback={game.artwork.coverFallback} fallback2={game.artwork.coverFallback2} alt={game.title} className="absolute inset-0 h-full w-full object-cover object-top" />
+            <SmartImage
+              src={coverCandidates[0] ?? game.artwork.cover}
+              fallback={coverCandidates[1] ?? game.artwork.coverFallback}
+              fallback2={coverCandidates[2] ?? game.artwork.coverFallback2}
+              alt={game.title}
+              className="absolute inset-0 h-full w-full object-cover object-top"
+            />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#4A3560] via-[#8263A1] to-[#17101F] text-[64px] font-extrabold text-[#F1EAF8]">
               P
             </div>
           )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgba(13,9,18,0.75)] via-transparent to-transparent" />
-          <span className="absolute bottom-2.5 left-2.5 rounded-full border border-[rgba(217,198,234,0.16)] bg-black/50 px-2.5 py-1 text-[10px] font-medium text-[#D9C6EA]/90 backdrop-blur-xl">
-            {game.highlight ?? 'Available now'}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+          <span className="absolute bottom-2.5 left-2.5 rounded-full border border-white/20 bg-black/60 px-2.5 py-1 text-[10px] font-semibold text-[#F1EAF8] backdrop-blur-xl">
+            {game.highlight ?? (installed ? 'Installed' : 'In Library')}
           </span>
         </div>
 
         {/* info */}
-        <div className="no-scrollbar min-w-0 flex-1 overflow-y-auto p-5">
-          <h2 id="game-details-title" className="pr-6 text-[19px] font-extrabold tracking-[0.04em] text-[#F1EAF8]">
+        <div className="no-scrollbar min-w-0 flex-1 overflow-y-auto pt-1">
+          <h2 id="game-details-title" className="pr-6 text-[22px] font-black tracking-[0.02em] text-[#F1EAF8]">
             {game.displayTitle ?? game.title.toUpperCase()}
           </h2>
-          {game.subtitle && <p className="mt-0.5 text-[12px] font-medium text-[#BEA0D8]/80">{game.subtitle}</p>}
+          {game.subtitle && <p className="mt-0.5 text-[12.5px] font-medium text-[#BEA0D8]/90">{game.subtitle}</p>}
 
           {/* owned-on */}
           <div className="mt-3 flex flex-wrap items-center gap-1.5">

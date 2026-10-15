@@ -304,7 +304,10 @@ export default function AppShell() {
     [handlePlay, handleInstall]
   );
 
-  const selectedGame = useMemo(() => activeLibrary.find((game) => game.id === selectedId), [activeLibrary, selectedId]);
+  const selectedGame = useMemo(
+    () => activeLibrary.find((game) => game.id === selectedId) ?? activeLibrary[0],
+    [activeLibrary, selectedId]
+  );
   const carouselGames = useMemo(
     () => activeLibrary.slice(0, 12),
     [activeLibrary]

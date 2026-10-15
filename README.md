@@ -6,17 +6,19 @@ Aevora es un lanzador de videojuegos de escritorio (*game launcher*) unificado c
 
 ## 🚀 Descarga y Ejecutables (Windows 64-bit)
 
-Los binarios de producción de la versión **v0.1.0** listos para usar se encuentran generados en:
+[![Descargar Aevora para Windows](https://img.shields.io/badge/Descargar%20Aevora-Windows%20(64--bit)-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/AndrehhX/Aevora/releases/latest/download/Aevora_0.1.0_x64-setup.exe)
+[![Última Versión](https://img.shields.io/github/v/release/AndrehhX/Aevora?style=for-the-badge&color=10B981&label=Versi%C3%B3n)](https://github.com/AndrehhX/Aevora/releases/latest)
 
-* **Instalador recomendado (NSIS .exe con asistente):**
-  [`src-tauri/target/release/bundle/nsis/Aevora_0.1.0_x64-setup.exe`](file:///c:/Users/Andreh/Desktop/new%20launcher/src-tauri/target/release/bundle/nsis/Aevora_0.1.0_x64-setup.exe) *(~2.89 MB)*
-* **Paquete Windows Installer (.msi):**
-  [`src-tauri/target/release/bundle/msi/Aevora_0.1.0_x64_en-US.msi`](file:///c:/Users/Andreh/Desktop/new%20launcher/src-tauri/target/release/bundle/msi/Aevora_0.1.0_x64_en-US.msi) *(~4.14 MB)*
-* **Ejecutable Portable Standalone (.exe):**
-  [`src-tauri/target/release/aevora.exe`](file:///c:/Users/Andreh/Desktop/new%20launcher/src-tauri/target/release/aevora.exe) *(~12.1 MB)*
+Haz clic directamente en el instalador para descargarlo:
+
+* **[⬇️ Descargar Instalador Recomendado (Aevora_0.1.0_x64-setup.exe)](https://github.com/AndrehhX/Aevora/releases/latest/download/Aevora_0.1.0_x64-setup.exe)**
+  *(Asistente de instalación estándar para Windows con soporte de auto-actualización)*
+* **[⬇️ Descargar Paquete Windows Installer (.msi)](https://github.com/AndrehhX/Aevora/releases/latest/download/Aevora_0.1.0_x64_en-US.msi)**
+  *(Instalador corporativo para despliegues desatendidos o directivas de grupo)*
+* **[📦 Ver todas las descargas y notas de versión en GitHub Releases](https://github.com/AndrehhX/Aevora/releases/latest)**
 
 > [!TIP]
-> Puedes copiar el instalador o el ejecutable a cualquier carpeta o distribuirlo directamente. Para publicar una nueva versión para tus usuarios, puedes subir estos archivos a la pestaña **Releases** de tu repositorio en GitHub.
+> **Actualizaciones automáticas:** Una vez instalado, Aevora comprobará automáticamente nuevas versiones en GitHub y se actualizará solo sin que tengas que volver a descargar nada manualmente.
 
 ---
 

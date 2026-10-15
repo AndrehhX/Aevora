@@ -21,6 +21,7 @@ export default function TopNavigation({
   onSelectGame,
   onOpenSettings,
   onOpenProfile,
+  onOpenPointsShop,
   onOpenSignOut,
   closeSignal,
 }: {
@@ -36,6 +37,7 @@ export default function TopNavigation({
   onSelectGame: (id: string) => void;
   onOpenSettings: () => void;
   onOpenProfile: () => void;
+  onOpenPointsShop?: () => void;
   onOpenSignOut: () => void;
   closeSignal: unknown;
 }) {
@@ -49,6 +51,7 @@ export default function TopNavigation({
 
   const onProfileAction = (id: ProfileAction) => {
     if (id === 'profile') onOpenProfile();
+    else if (id === 'pointsshop') onOpenPointsShop ? onOpenPointsShop() : onOpenProfile();
     else if (id === 'settings') onOpenSettings();
     else onOpenSignOut();
   };

@@ -17,6 +17,8 @@ import HomeOverview from './HomeOverview';
 import StoreView from '../views/StoreView';
 import ProfileStoreView from '../views/ProfileStoreView';
 import CommunityView from '../views/CommunityView';
+import FriendChatOverlay from './FriendChatOverlay';
+import UpdateNotificationBanner from './UpdateNotificationBanner';
 import { EarlyView, IndiesView } from '../views/Collections';
 import { getOwnedGames } from '../domain/library';
 import type { GameProviderEntry, ProviderId } from '../domain/provider';
@@ -34,6 +36,7 @@ import type { SteamCommunityItem } from '../integrations/steam/steamNews';
 import type { SteamStoreCategories, SteamStoreOffer } from '../integrations/steam/steamStore';
 import { launchGame, openStore, type LaunchResult } from '../integrations/steam/steamLaunch';
 import { getDesktopBridge } from '../integrations/desktop/bridge';
+import { checkForAppUpdates } from '../integrations/desktop/updater';
 import type { SteamCredentialsInput } from '../integrations/steam/steamCredentials';
 import { useProfileSyncGate } from '../hooks/useProfileSyncGate';
 
@@ -42,13 +45,14 @@ type Overlay =
   | { type: 'provider'; id: string; mode: 'play' | 'install' }
   | { type: 'settings' }
   | { type: 'community'; item: CommunityItem }
-  | { type: 'signout' };
+  | { type: 'signout' }
+  | { type: 'chat' };
 
 const BACKGROUNDS: Record<PersistedPrefs['theme'], string> = {
   aevora:
-    'radial-gradient(1200px 700px at 70% -10%, rgba(101,74,127,0.20), transparent 60%), radial-gradient(900px 600px at 8% 108%, rgba(74,53,96,0.22), transparent 60%), radial-gradient(700px 500px at 50% 50%, rgba(74,53,96,0.12), transparent 70%), linear-gradient(180deg,#17101F 0%,#0D0912 55%,#0D0912 100%)',
+    'radial-gradient(1200px 700px at 75% -10%, rgba(255,107,43,0.12), transparent 60%), radial-gradient(900px 600px at 10% 110%, rgba(255,75,20,0.07), transparent 60%), linear-gradient(180deg,#12141A 0%,#0E1015 60%,#0A0B0E 100%)',
   midnight:
-    'radial-gradient(1200px 700px at 70% -10%, rgba(90,110,200,0.14), transparent 60%), radial-gradient(900px 600px at 8% 108%, rgba(74,53,96,0.16), transparent 60%), radial-gradient(700px 500px at 50% 50%, rgba(60,70,140,0.10), transparent 70%), linear-gradient(180deg,#12121e 0%,#0b0b14 60%,#090910 100%)',
+    'radial-gradient(1200px 700px at 70% -10%, rgba(90,110,200,0.14), transparent 60%), radial-gradient(900px 600px at 8% 108%, rgba(50,60,100,0.14), transparent 60%), linear-gradient(180deg,#10121A 0%,#0B0D14 60%,#08090E 100%)',
 };
 
 const VALID_NAV = new Set(navItems);
@@ -89,6 +93,29 @@ export default function AppShell() {
   const notify = useCallback((msg: string) => {
     setToast({ id: Date.now(), msg });
   }, []);
+
+  const [updateInfo, setUpdateInfo] = useState<{ version: string; body?: string } | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const checkUpdates = async () => {
+      try {
+        const res = await checkForAppUpdates();
+        if (isMounted && res.available && res.version) {
+          setUpdateInfo({ version: res.version, body: res.body });
+          notify(`Update available: Aevora v${res.version}`);
+        }
+      } catch {
+        // quiet ignore
+      }
+    };
+    void checkUpdates();
+    const interval = setInterval(checkUpdates, 15 * 60 * 1000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [notify]);
 
   const connectSteam = useCallback(async () => {
     setSteamConnectionMessage('Connecting to Steam…');
@@ -329,11 +356,13 @@ export default function AppShell() {
   const providerOverlay = overlay?.type === 'provider' ? activeLibrary.find((game) => game.id === overlay.id) ?? null : null;
 
   return (
-    <div data-aevora-app data-aevora-reduced={prefs.reduceMotion ? 'true' : 'false'} className="relative h-screen w-screen overflow-hidden" style={{ background: BACKGROUNDS[prefs.theme] }}>
-      {/* film grain / vignette */}
+    <div data-aevora-app data-aevora-reduced={prefs.reduceMotion ? 'true' : 'false'} className="relative h-screen w-screen overflow-hidden p-2 sm:p-2.5 bg-[#090A0D]" style={{ background: BACKGROUNDS[prefs.theme] }}>
+      {/* ambient glows behind the curved glass frame */}
+      <div className="pointer-events-none absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(255,107,43,0.13)_0%,transparent_70%)] blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -left-40 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(255,75,20,0.07)_0%,transparent_70%)] blur-3xl" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_10%,transparent_55%,rgba(0,0,0,0.45)_100%)]" />
 
-      <div className="aevora-frame relative z-10 flex h-full w-full gap-3 p-3">
+      <div className="aevora-frame relative z-10 flex h-full w-full gap-3 p-3.5 overflow-hidden rounded-[26px] border border-white/[0.09] shadow-[0_20px_70px_rgba(0,0,0,0.85)] backdrop-blur-3xl">
         <Sidebar
           activeNav={activeNav}
           setActiveNav={changeNav}
@@ -344,6 +373,7 @@ export default function AppShell() {
           setSelectedId={selectGame}
           onCommunityClick={(item) => openOverlay({ type: 'community', item })}
           onOpenSettings={() => openOverlay({ type: 'settings' })}
+          onOpenChat={() => openOverlay({ type: 'chat' })}
           collapsed={prefs.sidebarCollapsed}
           onToggleCollapse={() => setStore((s) => ({ ...s, prefs: { ...s.prefs, sidebarCollapsed: !s.prefs.sidebarCollapsed } }))}
         />
@@ -364,9 +394,24 @@ export default function AppShell() {
             onSelectGame={selectGame}
             onOpenSettings={() => openOverlay({ type: 'settings' })}
             onOpenProfile={() => changeNav('Profile')}
+            onOpenPointsShop={() => {
+              changeNav('Profile');
+              setProfileSection('store');
+            }}
             onOpenSignOut={() => openOverlay({ type: 'signout' })}
             closeSignal={overlay}
           />
+
+          <AnimatePresence>
+            {updateInfo && (
+              <UpdateNotificationBanner
+                version={updateInfo.version}
+                body={updateInfo.body}
+                onDismiss={() => setUpdateInfo(null)}
+              />
+            )}
+          </AnimatePresence>
+
           <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-1">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -397,23 +442,14 @@ export default function AppShell() {
                           />
                         </div>
                         {carouselGames.length > 0 && (
-                          <div className="flex flex-col gap-2 pt-1">
-                            <div className="flex items-center justify-between px-1">
-                              <div className="flex items-center gap-2.5">
-                                <h3 className="text-[17px] font-bold text-white tracking-tight">Special offers</h3>
-                                <span className="rounded-full bg-white/[0.08] px-2.5 py-0.5 text-[10.5px] font-medium text-[#8E929E]">
-                                  Featured
-                                </span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => changeNav('Store')}
-                                className="text-[12px] font-semibold text-[#8E929E] hover:text-[#FFA043] transition-colors"
-                              >
-                                Learn more
-                              </button>
-                            </div>
-                            <GameCarousel games={carouselGames} selectedId={selectedId} onSelect={selectGame} inertia={prefs.inertia} />
+                          <div className="pt-2">
+                            <GameCarousel
+                              games={carouselGames}
+                              selectedId={selectedId}
+                              onSelect={selectGame}
+                              inertia={prefs.inertia}
+                              onLearnMore={() => changeNav('Store')}
+                            />
                           </div>
                         )}
                       </>
@@ -526,6 +562,9 @@ export default function AppShell() {
         }}
         onClose={() => setOverlay(null)}
       />
+      {overlay?.type === 'chat' && (
+        <FriendChatOverlay onClose={() => setOverlay(null)} currentUserName={store.profile.name} />
+      )}
 
       <ToastHost toast={toast} onDone={() => setToast(null)} />
       <CustomCursor enabled={prefs.cursor && !prefs.reduceMotion} />
